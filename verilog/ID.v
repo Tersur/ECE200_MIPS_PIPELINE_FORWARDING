@@ -14,7 +14,8 @@ module ID(
 		input [31:0] 	WriteData_IN,			
  		input [4:0] 	WriteRegister_IN,		
 		input 		WriteEnable_IN,			
-	
+
+		
 	//MODULE OUTPUTS
 
 
@@ -33,10 +34,20 @@ module ID(
 		output 	 	MemWrite_OUT,			
 
 		output [4:0]  	WriteRegister_OUT,		
-		output 	 	WriteEnable_OUT,				
+		output 	 	WriteEnable_OUT,
+	
+		/******************************/
+		output [4:0]     	RegisterRS_OUT,  
+		output [4:0]      	RegisterRT_OUT,
+
+		//ID --> FORWARD
+		inout [31:0] _RegisterValue_OUT,		
+		inout [4:0] _Register_OUT,
+		/******************************/
 
 		//ID --> SYSTEM
 		output 		Syscall_OUT
+		
 
 );
 
@@ -55,9 +66,16 @@ assign 	RegisterRT 	= Instruction_IN[20:16];
 assign 	RegisterRD 	= Instruction_IN[15:11];
 assign 	Immediate 	= Instruction_IN[15:0];
 assign 	ShiftAmount 	= Instruction_IN[10:6];
+	
+/******************************************/
+assign RegisterRS_OUT = Instruction_IN[25:21];
+assign RegisterRT_OUT = Instruction_IN[20:16];
+/******************************************/
 
 wire [31:0]    	RegisterRSValue;
 wire [31:0]    	RegisterRTValue;
+wire [31:0]		regvalue;
+wire [4:0]		regno;
 
 RegFile RegFile(
 
@@ -77,7 +95,11 @@ RegFile RegFile(
 	//MODULE OUTPUTS
 
 		.ReadData1_OUT(RegisterRSValue),
-		.ReadData2_OUT(RegisterRTValue)
+		.ReadData2_OUT(RegisterRTValue),
+		/*************************************/
+		.WBRegisterValue_OUT(regvalue),
+		.WBRegister_OUT(regno)
+		/*************************************/
     
 );
 
@@ -175,5 +197,10 @@ assign WriteEnable_OUT 		= (WriteRegister_OUT != 5'd0) ? RegWrite : 1'd0;
 assign AltPCEnable_OUT 		= AltPCEnable;
 assign AltPC_OUT 		= AltPC;
 assign Syscall_OUT 		= Syscall;
+
+/*************************************/
+assign _RegisterValue_OUT = regvalue;		
+assign _Register_OUT = regno;
+/*************************************/
 
 endmodule

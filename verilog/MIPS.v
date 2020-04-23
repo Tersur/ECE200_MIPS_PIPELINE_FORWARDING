@@ -88,6 +88,15 @@ module MIPS (
 
 	wire [4:0]	WriteRegister_IDtoIDEXE;
 	wire 		WriteEnable_IDtoIDEXE;
+	
+	/***********************************/
+	wire [4:0]	b_RegisterRS_IDtoIDEXE;
+	wire [4:0]	b_RegisterRT_IDtoIDEXE;
+
+	//ID --> FORWARD
+	wire [31:0]	b_WB;
+	wire [4:0]  b_WB_reg;
+	/***********************************/
 
 //------------------------------------------
 //WIRES ORIGINATING FROM THE ID/EXE REGISTER
@@ -106,6 +115,11 @@ module MIPS (
 
 	wire [4:0]  	WriteRegister_IDEXEtoEXEMEM;
 	wire        	WriteEnable_IDEXEtoEXEMEM;
+	
+	/***********************************/
+	wire [4:0]	b_RegisterRS_IDEXEtoFORWARD;
+	wire [4:0]	b_RegisterRT_IDEXEtoFORWARD;
+	/***********************************/
 
 //------------------------------------
 //WIRES ORIGINATING FROM THE EXE STAGE
@@ -191,6 +205,16 @@ module MIPS (
 	wire 	STALL_toMEMWB;
 	wire 	FLUSH_toMEMWB;
 
+/***********************************/
+//------------------------------------------------
+//WIRES ORIGINATING FROM THE FORWARD UNIT
+//------------------------------------------------
+	
+	wire [31:0] b_operandA_OUT;
+	wire [31:0] b_operandB_OUT;
+	wire		b_forward;
+	//wire		b_forwardMEM;
+/***********************************/
 
 //DISABLE BLOCK READ/WRITE
 assign MemBlockRead_OUT		= 1'b0;
@@ -293,8 +317,17 @@ ID ID(
 		.MemWrite_OUT(MemWrite_IDtoIDEXE),
 
 		.WriteRegister_OUT(WriteRegister_IDtoIDEXE),
-		.WriteEnable_OUT(WriteEnable_IDtoIDEXE)
+		.WriteEnable_OUT(WriteEnable_IDtoIDEXE),
+		
+		/****************/
+		.RegisterRS_OUT(b_RegisterRS_IDtoIDEXE),
+		.RegisterRT_OUT(b_RegisterRT_IDtoIDEXE),
+		/****************/
 
+		//ID --> FORWARD
+		._RegisterValue_OUT(b_WB),		
+		._Register_OUT(b_WB_reg)
+		/******************************/
 );
 
 //ID/EXE REGISTER
@@ -321,7 +354,12 @@ IDEXE IDEXE(
 		
 		//WB STAGE INFORMATION
 		.WriteRegister_IN(WriteRegister_IDtoIDEXE),
-		.WriteEnable_IN(WriteEnable_IDtoIDEXE),		
+		.WriteEnable_IN(WriteEnable_IDtoIDEXE),	
+		
+		/****************/
+		.RegisterRS_IN(b_RegisterRS_IDtoIDEXE),
+		.RegisterRT_IN(b_RegisterRT_IDtoIDEXE),
+		/****************/
 
 	//MODULE OUTPUTS
 	
@@ -338,7 +376,12 @@ IDEXE IDEXE(
 	
 		//WB STAGE INFORMATION
 		.WriteRegister_OUT(WriteRegister_IDEXEtoEXEMEM),
-		.WriteEnable_OUT(WriteEnable_IDEXEtoEXEMEM)
+		.WriteEnable_OUT(WriteEnable_IDEXEtoEXEMEM),
+	
+		/****************/
+		._RegisterRS_OUT(b_RegisterRS_IDEXEtoFORWARD),
+		._RegisterRT_OUT(b_RegisterRT_IDEXEtoFORWARD)
+		/****************/
 
 );
 
@@ -356,7 +399,14 @@ EXE EXE(
 		.OperandB_IN(OperandB_IDEXEtoEXE),	
 		.ALUControl_IN(ALUControl_IDEXEtoEXE),
 		.ShiftAmount_IN(ShiftAmount_IDEXEtoEXE),
-
+		
+		/***********************************/
+		//FORWARD --> EXE
+		.FOperandA_IN(b_operandA_OUT),
+		.FOperandB_IN(b_operandB_OUT),
+		.forward(b_forward),
+		//.forwardMEM(b_forwardMEM),
+		/***********************************/
 	//MODULE OUTPUTS
 	
 		//EXE --> EXE/MEM
@@ -479,10 +529,34 @@ Hazard Hazard(
 Forward Forward(
 
 	//MODULE INPUTS
+	.CLOCK(CLOCK),
+	.RESET(RESET),
+
+	//ID/EXE --> FORWARD
+	._operandA_IN(OperandA_IDEXEtoEXE),
+	._operandB_IN(OperandB_IDEXEtoEXE),
 	
+	._RegisterRS_IN(b_RegisterRS_IDEXEtoFORWARD),
+	._RegisterRT_IN(b_RegisterRT_IDEXEtoFORWARD),
+	
+	//EXE/MEM --> FORWARD
+	.RegvalueEXEMEM_IN(ALUResult_EXEMEMtoMEM),
+	.RegisterEXEMEM_IN(WriteRegister_EXEMEMtoMEMWB),
+	
+	//MEM/WB --> FORWARD
+	.RegvalueMEMWB_IN(WriteData_MEMWBtoID),
+	.RegisterMEMWB_IN(WriteRegister_MEMWBtoID),
+
+	._RegisterValue_IN(b_WB),		
+	._Register_IN(b_WB_reg),
 
 	//MODULE OUTPUTS
-
+	
+	//FORWARD --> EXE
+	._operandA_OUT(b_operandA_OUT),
+	._operandB_OUT(b_operandB_OUT),
+	._forward(b_forward)
+	//._forwardMEM(b_forwardMEM)
 
 );
 

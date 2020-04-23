@@ -23,7 +23,12 @@ module IDEXE(
 		
 		//ID --> ID/EXE
 		input [4:0]	WriteRegister_IN,
-		input 		WriteEnable_IN,		
+		input 		WriteEnable_IN,
+	
+		/**************************************/
+		input [4:0] RegisterRS_IN,
+		input [4:0] RegisterRT_IN,
+		/**************************************/
 
 	//MODULE OUTPUTS
 	
@@ -32,6 +37,12 @@ module IDEXE(
 		output [31:0]	OperandB_OUT,
 		output [5:0]	ALUControl_OUT,
 		output [4:0]	ShiftAmount_OUT,
+		
+		/***********************************/
+		//ID/EXE --> FORWARD
+		output [4:0] _RegisterRS_OUT,		
+		output [4:0] _RegisterRT_OUT,
+		/************************************/
 	
 		//ID/EXE --> EXE/MEM (MEM INFORMATION)
 		output [31:0]	MemWriteData_OUT,
@@ -57,6 +68,11 @@ reg		MemWrite;
 reg [4:0]	WriteRegister;
 reg		WriteEnable;
 
+/********************************/
+reg  [4:0] RegisterS;
+reg  [4:0] RegisterT;
+/*******************************/
+
 //ASSIGN OUTPUTS TO PIPELINE REGISTERS
 assign OperandA_OUT 		= OperandA;
 assign OperandB_OUT 		= OperandB;
@@ -69,6 +85,11 @@ assign MemWrite_OUT 		= MemWrite;
 
 assign WriteRegister_OUT 	= WriteRegister;
 assign WriteEnable_OUT		= WriteEnable;
+
+/********************************************/
+assign _RegisterRS_OUT		= RegisterS;
+assign _RegisterRT_OUT		= RegisterT;
+/********************************************/
 
 //WHEN CLOCK RISES OR RESET FALLS
 always @(posedge CLOCK or negedge RESET) begin
@@ -88,6 +109,11 @@ always @(posedge CLOCK or negedge RESET) begin
 
 		WriteRegister	<= 0;
 		WriteEnable	<= 0;
+		
+		/*********************/
+		RegisterS <= 0;
+		RegisterT <= 0;
+		/********************/
 
 	//ELSE IF CLOCK IS HIGH
 	end else if (CLOCK) begin
@@ -121,6 +147,11 @@ always @(posedge CLOCK or negedge RESET) begin
 	
 			WriteRegister	<= WriteRegister_IN;
 			WriteEnable	<= WriteEnable_IN;
+			
+			/************************************/
+			RegisterS <= RegisterRS_IN;
+			RegisterT <= RegisterRT_IN;
+			/***********************************/
 	
 		//ELSE IF MODULE IS BEING FLUSHED
 		end else if (FLUSH) begin
@@ -137,7 +168,11 @@ always @(posedge CLOCK or negedge RESET) begin
 	
 			WriteRegister	<= 0;
 			WriteEnable	<= 0;
-	
+			
+			/*********************/
+			RegisterS <= 0;
+			RegisterT <= 0;
+			/********************/
 	
 		//ELSE IF MODULE IS BEING STALLED
 		end else if (STALL) begin

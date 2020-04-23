@@ -24,17 +24,32 @@ module Hazard(
 
 reg [4:0] MultiCycleRing;
 
+// assign FLUSH_MEMWB = 1'b0;
+// assign STALL_MEMWB = 1'b0;
+
+// assign FLUSH_EXEMEM = 1'b0;
+// assign STALL_EXEMEM = (FLUSH_MEMWB || STALL_MEMWB);
+
+// assign FLUSH_IDEXE = 1'b0;
+// assign STALL_IDEXE = (FLUSH_EXEMEM || STALL_EXEMEM);
+
+// assign FLUSH_IFID = !(MultiCycleRing[0]);
+// assign STALL_IFID = (FLUSH_IDEXE || STALL_IDEXE || FLUSH_IFID);
+	
+/*********************************/
 assign FLUSH_MEMWB = 1'b0;
 assign STALL_MEMWB = 1'b0;
 
 assign FLUSH_EXEMEM = 1'b0;
-assign STALL_EXEMEM = (FLUSH_MEMWB || STALL_MEMWB);
+assign STALL_EXEMEM = 1'b0;
 
 assign FLUSH_IDEXE = 1'b0;
-assign STALL_IDEXE = (FLUSH_EXEMEM || STALL_EXEMEM);
+assign STALL_IDEXE = 1'b0;
 
-assign FLUSH_IFID = !(MultiCycleRing[0]);
-assign STALL_IFID = (FLUSH_IDEXE || STALL_IDEXE || FLUSH_IFID);
+assign FLUSH_IFID = 1'b0;
+assign STALL_IFID = 1'b0;
+	
+/*******************************/
 
 
 always @(posedge CLOCK or negedge RESET) begin
