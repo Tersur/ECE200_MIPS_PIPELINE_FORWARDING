@@ -66,145 +66,146 @@ assign _forward = _forward_;
 //assign _forwardMEM = _forward2_;
 
 always @(negedge CLOCK or negedge RESET) begin
-        if(!RESET)begin
-                _operandA <= 0;
-                _operandB <= 0;
-                _forward_ <= 1'b0;
-               // _forward2_ <= 1'b0;
-        end
+    if(!RESET)begin
+        _operandA <= 0;
+        _operandB <= 0;
+        _forward_ <= 1'b0;
+        // _forward2_ <= 1'b0;
+    end
 
-        if(!CLOCK)begin
-                case (RegDEXE)
-                        RegS: begin/*
+    if(!CLOCK)begin
+        case (RegDEXE)
+            RegS: begin/*
+            _operandA <= RegvalueEXEMEM_IN;
+            _operandB <= _operandB_IN;
+            _forward1_ <= 1'b1*/
+            
+                case(RegDEXE)
+                    RegT:begin
                         _operandA <= RegvalueEXEMEM_IN;
-                        _operandB <= _operandB_IN;
-                        _forward1_ <= 1'b1*/
-                        
-                        case(RegDEXE)
-                                RegT:begin
+                        _operandB <= RegvalueEXEMEM_IN;
+                        _forward_ <= 1'b1;
+                    end
+                    default:begin
+                        /*****************/
+                        case (RegDMEM)
+                            RegT:begin
                                 _operandA <= RegvalueEXEMEM_IN;
-                                _operandB <= RegvalueEXEMEM_IN;
+                                _operandB <= RegvalueMEMWB_IN;
                                 _forward_ <= 1'b1;
-                                end
-                                default:begin
-                                    /*****************/
-                                    case (RegDMEM)
-                                        RegT:begin
+                            end
+                        /*****************/
+                            default:begin
+                                case(RegWB)
+
+                                    RegT:begin
                                         _operandA <= RegvalueEXEMEM_IN;
-                                        _operandB <= RegvalueMEMWB_IN;
+                                        _operandB <= _RegisterValue_IN;
                                         _forward_ <= 1'b1;
-                                        end
-                                    /*****************/
+                                    end
+
                                     default:begin
-										case(RegWB)
-										RegT:begin
-										_operandA <= RegvalueEXEMEM_IN;
-										_operandB <= _RegisterValue_IN;
-										_forward_ <= 1'b1;
-										end
-										default:begin
                                         _operandA <= RegvalueEXEMEM_IN;
                                         _operandB <= _operandB_IN;
                                         _forward_ <= 1'b1;
-										end
-										endcase
                                     end
-                                    endcase
-                                end
-                        endcase
-                        end
-                        /**************
-                        case (RegDMEM)
-                            RegT:begin
-                            _operandA <= RegvalueEXEMEM_IN;
-                            _operandB <= RegvalueMEMWB_IN;
-                            _forward1_ <= 1'b1;
+                                endcase
                             end
-                        endcase
-                        end
-                        /*****************/
 
-                        RegT: begin
-                        /******************/
-                         case(RegDMEM)
+                        endcase
+                    end
+                endcase
+            end
+                    /**************
+                    case (RegDMEM)
+                        RegT:begin
+                        _operandA <= RegvalueEXEMEM_IN;
+                        _operandB <= RegvalueMEMWB_IN;
+                        _forward1_ <= 1'b1;
+                        end
+                    endcase
+                    end
+                    /*****************/
+
+            RegT: begin
+            /******************/
+                case(RegDMEM)
+                    RegS:begin
+                        _operandB <= RegvalueEXEMEM_IN;
+                        _operandA <= RegvalueMEMWB_IN;
+                        _forward_ <= 1'b1;
+                    end
+                    // endcase
+                    /******************/
+                    default:begin
+                        case(RegWB)
                             RegS:begin
-                            _operandB <= RegvalueEXEMEM_IN;
-                            _operandA <= RegvalueMEMWB_IN;
-                            _forward_ <= 1'b1;
+                                _operandB <= RegvalueEXEMEM_IN;
+                                _operandA <= _RegisterValue_IN;
+                                _forward_ <= 1'b1;
                             end
-                       		// endcase
-                        	/******************/
-                           default:begin
-						   		case(RegWB)
-								RegS:begin
-								_operandB <= RegvalueEXEMEM_IN;
-								_operandA <= _RegisterValue_IN;
-								_forward_ <= 1'b1;
-								end
-								default:begin
-								_operandB <= RegvalueEXEMEM_IN;
-								_operandA <= _operandA_IN;
-								_forward_ <= 1'b1;
-								end
-								endcase
-							end
-                          endcase
+                            default:begin
+                                _operandB <= RegvalueEXEMEM_IN;
+                                _operandA <= _operandA_IN;
+                                _forward_ <= 1'b1;
+                            end
+                        endcase
+                    end
+                endcase
+            end
+
+            default: begin
+
+                case (RegDMEM)
+                    RegS: begin
+                    case(RegDMEM)
+                        RegT:begin
+                        _operandA <= RegvalueMEMWB_IN;
+                        _operandB <= RegvalueMEMWB_IN;                                                    
+                        _forward_ <= 1'b1;
                         end
-
-                        default: begin
-
-                            case (RegDMEM)
-                                    RegS: begin
-                                    case(RegDMEM)
-                                        RegT:begin
-                                        _operandA <= RegvalueMEMWB_IN;
-                                        _operandB <= RegvalueMEMWB_IN;                                                    
-                                        _forward_ <= 1'b1;
-                                        end
-                                        default:begin
-											case(RegWB)
-											RegT:begin
-											_operandA <= RegvalueMEMWB_IN;
-											_operandB <= _RegisterValue_IN;
-											_forward_ <= 1'b1;
-											end
-											default:begin
-											_operandA <= RegvalueMEMWB_IN;
-											_operandB <= _operandB_IN;
-											_forward_ <= 1'b1;
-											end
-											endcase
-										end
-                                    endcase
-                                    end
-
-                                    RegT: begin
-									case(RegWB)
-										RegS:begin
-										_operandB <= RegvalueMEMWB_IN;
-										_operandA <= _RegisterValue_IN;
-										_forward_ <= 1'b1;
-										end
-										default:begin
-										_operandB <= RegvalueMEMWB_IN;
-										_operandA <= _operandA_IN;
-										_forward_ <= 1'b1;
-										end	
-										// end
-										// _forward_ <= 1'b0;
-									//end
-									endcase
-									end
-									default: begin
-										_forward_ <= 1'b0;
-									end
+                        default:begin
+                            case(RegWB)
+                                RegT:begin
+                                _operandA <= RegvalueMEMWB_IN;
+                                _operandB <= _RegisterValue_IN;
+                                _forward_ <= 1'b1;
+                                end
+                                default:begin
+                                _operandA <= RegvalueMEMWB_IN;
+                                _operandB <= _operandB_IN;
+                                _forward_ <= 1'b1;
+                                end
                             endcase
-            
                         end
+                    endcase
+                    end
+
+                    RegT: begin
+                    case(RegWB)
+                        RegS:begin
+                        _operandB <= RegvalueMEMWB_IN;
+                        _operandA <= _RegisterValue_IN;
+                        _forward_ <= 1'b1;
+                        end
+                        default:begin
+                        _operandB <= RegvalueMEMWB_IN;
+                        _operandA <= _operandA_IN;
+                        _forward_ <= 1'b1;
+                        end	
+                        // end
+                        // _forward_ <= 1'b0;
+                    //end
+                    endcase
+                    end
+                    default: begin
+                        _forward_ <= 1'b0;
+                    end
                 endcase
 
-
-        end
+            end
+        endcase
+    end
 end
 
 endmodule
