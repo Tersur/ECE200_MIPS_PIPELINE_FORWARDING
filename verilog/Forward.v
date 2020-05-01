@@ -858,7 +858,7 @@ end //4th always end
 //5th always
 /*forwarding for loads
 */
-always @(posedge CLOCK)begin
+always @(negedge CLOCK)begin
     
 end //5th always ends
 
