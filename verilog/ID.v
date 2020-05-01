@@ -8,13 +8,19 @@ module ID(
 		
 		//IF/ID --> ID
 		input [31:0] 	Instruction_IN, 		
-		input [31:0] 	InstructionAddressPlus4_IN,	
+		input [31:0] 	InstructionAddressPlus4_IN,
+
+		//FORWARD --> ID 
+		input [31:0] branch_operandA_IN,
+		input [31:0] branch_operandB_IN,
+		input 		 branch_Forward_IN,	
 
 		//MEM/WB --> ID
 		input [31:0] 	WriteData_IN,			
  		input [4:0] 	WriteRegister_IN,		
 		input 		WriteEnable_IN,			
-	
+
+		
 	//MODULE OUTPUTS
 
 
@@ -33,10 +39,30 @@ module ID(
 		output 	 	MemWrite_OUT,			
 
 		output [4:0]  	WriteRegister_OUT,		
-		output 	 	WriteEnable_OUT,				
+		output 	 	WriteEnable_OUT,
+	
+		/******************************/
+		output [4:0]     	RegisterRS_OUT,  
+		output [4:0]      	RegisterRT_OUT,
+		// output RegDest_OUT;
+		// output SignOrZero_OUT,
+
+		//ID --> FORWARD
+		output [31:0] _RegisterValue_OUT,		
+		output [4:0] _Register_OUT,
+		output 		_writeEnable_OUT,
+		output		if_immed_OUT,
+		output		if_jumpReg_OUT,
+		output		if_jumpID_OUT,
+		output		if_branchID_OUT,
+		//output		if_memRead_OUT,
+		// inout [31:0]		_FRegval,
+		// inout		_Forward,
+		/******************************/
 
 		//ID --> SYSTEM
 		output 		Syscall_OUT
+		
 
 );
 
@@ -55,9 +81,22 @@ assign 	RegisterRT 	= Instruction_IN[20:16];
 assign 	RegisterRD 	= Instruction_IN[15:11];
 assign 	Immediate 	= Instruction_IN[15:0];
 assign 	ShiftAmount 	= Instruction_IN[10:6];
+	
+/******************************************/
+assign RegisterRS_OUT = Instruction_IN[25:21];
+assign RegisterRT_OUT = Instruction_IN[20:16];
+/******************************************/
 
 wire [31:0]    	RegisterRSValue;
 wire [31:0]    	RegisterRTValue;
+/***********************/
+wire [31:0]		regvalue_from_Regfile;
+wire [4:0]		reg_from_Regfile;
+wire			write_enable;
+
+wire [31:0]  sourceRegister;
+wire [31:0]  targetRegister;
+/***********************/
 
 RegFile RegFile(
 
@@ -77,7 +116,12 @@ RegFile RegFile(
 	//MODULE OUTPUTS
 
 		.ReadData1_OUT(RegisterRSValue),
-		.ReadData2_OUT(RegisterRTValue)
+		.ReadData2_OUT(RegisterRTValue),
+		/*************************************/
+		.write_OUT(write_enable),
+		.WBRegisterValue_OUT(regvalue_from_Regfile),
+		.WBRegister_OUT(reg_from_Regfile)
+		/*************************************/
     
 );
 
@@ -91,8 +135,10 @@ wire		RegWrite;
 wire		JumpRegister;		
 wire		SignOrZero;		
 wire		Syscall;		
-wire [5:0]	ALUControl;		
-
+wire [5:0]	ALUControl;
+/**************************/	
+wire		immed;
+/*************************/
 Decoder Decoder(
 
 	//MODULE INPUTS
@@ -114,20 +160,31 @@ Decoder Decoder(
     		.ALUControl(ALUControl),
 		/* verilator lint_off PINCONNECTEMPTY */
     		.MultRegAccess(),   	
-    		.ALUSrc() 
+    		.ALUSrc(immed) 
 		/* verilator lint_on PINCONNECTEMPTY */
 
 );
 
 wire AltPCEnable;
 
+always begin
+	if(!branch_Forward_IN)begin
+		sourceRegister = RegisterRSValue;
+		targetRegister = RegisterRTValue;
+	end
+	if(branch_Forward_IN)begin
+		sourceRegister = branch_operandA_IN;
+		targetRegister = branch_operandB_IN;
+	end
+
+end
 Compare Compare(
 
 	//MODULE INPUTS
 	
 		.Jump_IN(Jump), 
-		.OperandA_IN(RegisterRSValue),
-    		.OperandB_IN(RegisterRTValue),
+		.OperandA_IN(sourceRegister),
+    		.OperandB_IN(targetRegister),
 		.Opcode_IN(Opcode),
 	      	.RegisterRT_IN(RegisterRT),
 
@@ -138,6 +195,8 @@ Compare Compare(
 );
 
 wire [31:0] AltPC;
+// wire [31:0] b_Regval;
+// wire	b_forwardIN;
 
 NextInstructionCalculator NextInstructionCalculator(
 
@@ -148,7 +207,9 @@ NextInstructionCalculator NextInstructionCalculator(
     		.InstructionAddressPlus4_IN(InstructionAddressPlus4_IN),
     		.Jump_IN(Jump), 
     		.JumpRegister_IN(JumpRegister), 
-    		.RegisterValue_IN(RegisterRSValue), 
+    		.RegisterValue_IN(RegisterRSValue),
+			// ._RegisterValue_IN(b_Regval),
+			// .Forward(b_forwardIN), 
 
 	//MODULE OUTPUTS
     	
@@ -175,5 +236,22 @@ assign WriteEnable_OUT 		= (WriteRegister_OUT != 5'd0) ? RegWrite : 1'd0;
 assign AltPCEnable_OUT 		= AltPCEnable;
 assign AltPC_OUT 		= AltPC;
 assign Syscall_OUT 		= Syscall;
+
+/*************************************/
+assign _RegisterValue_OUT = regvalue_from_Regfile;		
+assign _Register_OUT = reg_from_Regfile;
+assign _writeEnable_OUT = write_enable;
+
+assign if_immed_OUT = immed;
+assign if_jumpReg_OUT	= JumpRegister;
+assign if_jumpID_OUT	= Jump;
+assign if_branchID_OUT		= Branch;
+// assign b_Regval = _FRegval;
+
+// assign b_forwardIN = _Forward;
+//end
+// assign RegDest_OUT = RegDest;
+// assign SignOrZero_OUT = SignOrZero;
+/*************************************/
 
 endmodule

@@ -10,8 +10,18 @@ module EXE(
 		input [31:0] 	OperandA_IN,		
 		input [31:0] 	OperandB_IN,		
 		input [5:0]  	ALUControl_IN,		
-		input [4:0]  	ShiftAmount_IN,		
-	
+		input [4:0]  	ShiftAmount_IN,
+		/**************************/
+		//FORWARD --> EXE
+		input [31:0] 	FOperandA_IN,		
+		input [31:0] 	FOperandB_IN,
+		input  [31:0] S_operandA_IN,
+        input  [31:0] S_operandB_IN,
+
+		input 		forward,
+		input		Fmem_forwardIN,
+		//input		forwardMEM,
+		/************************/
 	//MODULE OUTPUT
 
 		//EXE --> EXE/MEM
@@ -25,13 +35,41 @@ reg [31:0] LO/*verilator public*/;
 wire [31:0] newHI;
 wire [31:0] newLO;
 
+/*******************************/	
+// reg _forwardexe;
+wire [31:0] OperandA;
+wire [31:0] OperandB;
+
+// assign _forwardexe = forward;
+always begin
+	case (forward)
+		1'b0:begin
+			case(Fmem_forwardIN)
+				1'b1:begin
+				OperandA = S_operandA_IN;
+				OperandB = S_operandB_IN;
+				end
+				default: begin
+				OperandA = OperandA_IN;
+				OperandB = OperandB_IN;
+				end
+			endcase
+		end
+		1'b1:begin
+		OperandA = FOperandA_IN;
+		OperandB = FOperandB_IN;
+		end
+
+	endcase
+end
+/*******************************/
 ALU ALU(
 
 	//MODULE INPUTS
 	.HI_IN(HI),
 	.LO_IN(LO),
-	.OperandA_IN(OperandA_IN), 
-	.OperandB_IN(OperandB_IN), 
+	.OperandA_IN(OperandA), //OperandA_IN
+	.OperandB_IN(OperandB), //OperandB_IN
 	.ALUControl_IN(ALUControl_IN), 
 	.ShiftAmount_IN(ShiftAmount_IN), 
 

@@ -21,7 +21,12 @@ module RegFile(
 	// MODULE OUTPUTS
 
 		output [31:0] 	ReadData1_OUT,
-		output [31:0] 	ReadData2_OUT
+		output [31:0] 	ReadData2_OUT,
+		/*************************************/
+		output			write_OUT,
+		output [31:0]	WBRegisterValue_OUT,
+		output [4:0]	WBRegister_OUT
+		/*************************************/
 
 );
 
@@ -79,11 +84,18 @@ always @(posedge CLOCK or negedge RESET) begin
 
 			// WRITE 'WriteData_IN' TO REGISTER 'WriteRegister_IN'
 			Reg[WriteRegister_IN] <= WriteData_IN;
-	
+			/**************************************/
+			WBRegisterValue_OUT = WriteData_IN;
+			WBRegister_OUT = WriteRegister_IN;
+			write_OUT <= WriteEnable_IN;
+			/**************************************/
 		end
 
 	end
 
+end
+always @(negedge CLOCK) begin
+	write_OUT <= 0;
 end
 
 endmodule

@@ -24,9 +24,10 @@ assign HI_OUT = HI_IN;
 assign LO_OUT = LO_IN;
 
 //RENAMED FOR READABILITY
-wire [31:0] A = OperandA_IN;
-wire [31:0] B = OperandB_IN;
-
+wire [31:0] A;
+wire [31:0] B;
+assign A = OperandA_IN;
+assign B = OperandB_IN;
 //USED FOR BLOCK ASSIGNMENT
 /* TODO
  * Procedural assignment to wires is not in standard
@@ -104,6 +105,7 @@ always begin
 		6'b001011:begin 
 			
 			HI_OUT = A;
+			// ALUResult_OUT = A;
 			
 		end
 		

@@ -23,7 +23,7 @@ assign 	Taken_OUT = BranchTaken | Jump_IN;
  * Preventing using higher versions of verilator
  */
 always begin
-	
+	// $display("\nA: %d B: %d\n", OperandA_IN, OperandB_IN);
 	//CASE STATEMENT FOR OPCODE
 	case(Opcode_IN)
 		
