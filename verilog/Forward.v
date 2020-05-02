@@ -68,7 +68,7 @@ module Forward(
         //FORWARD --> MEM
         //connect to exemem and exe
         output mem_forward,
-        output [31:0] mem_write_data
+        output [31:0] mem_write_data // to EXEMEM
 
 
 );
@@ -723,22 +723,22 @@ end //3rd always ends
 /*this for when stores follow an instruction
 */
 always @(negedge CLOCK) begin
-    if(mem_write_IN)begin
-        S_operandB <= _operandB_IN;
-        if(_RegisterRS_IN == RegDEXE)begin
-            if(mem_read_IN)begin
-                S_operandA <= MEMREAD_IN;
+    if(mem_write_IN)begin // ID/EXE
+        S_operandB <= _operandB_IN; //from ID/EXE
+        if(_RegisterRS_IN == RegDEXE)begin //if ID/EXE == EXE/MEM
+            if(mem_read_IN)begin // if EXE/MEM mem_read_IN
+                S_operandA <= MEMREAD_IN; //MEM
             end
             else begin
                 _operandA <= RegvalueEXEMEM_IN;
             end
 
-            if(_RegisterRT_IN == RegDEXE)begin
-                if(mem_read_IN)begin
-                    memdata <= MEMREAD_IN;
+            if(_RegisterRT_IN == RegDEXE)begin //if ID/EXE == EXE/MEM
+                if(mem_read_IN)begin // if EXE/MEM mem_read_IN
+                    memdata <= MEMREAD_IN; // to EXEMEM from MEM
                 end
-                else if(MemWrite_IN)begin
-                    memdata <= MemWriteData_IN;
+                else if(MemWrite_IN)begin // EXE/MEM
+                    memdata <= MemWriteData_IN; // to EXEMEM from EXE/MEM
                 end
                 else begin
                     memdata <= RegvalueEXEMEM_IN;
@@ -859,7 +859,34 @@ end //4th always end
 /*forwarding for loads
 */
 always @(negedge CLOCK)begin
-    
+    if(mem_read_IN) begin
+        S_operandB <= _operandB_IN;
+        if(_RegisterRS_IN == RegDEXE)begin  //if regs in ID/EXE == EXE/MEM
+            if(mem_read_IN)begin // if EXE/MEM is reading from memory
+                S_operandA <= MEMREAD_IN; // data read into MEM put into operand
+            end
+            else begin
+                S_operandA <= RegvalueEXEMEM_IN; // reg value from EXEMEM
+            end
+            _forward4 <= 1'b1;
+        end
+        // _RegisterRT_IN will be replaced with data, so no need to forward to it
+        
+        else if(_RegisterRS_IN == RegDMEM)begin // if regs in ID/EXE == MEM/WB
+            S_operandA <= RegvalueMEMWB_IN;
+            _forward4 <= 1'b1;
+        end
+
+        else if(_RegisterRS_IN == RegWB)begin
+            S_operandA <= _RegisterValue_IN;
+            _forward4 <= 1'b1;
+        end
+
+        else begin
+            S_operandA <= _operandA_IN;
+            _forward4 <= 1'b0;
+        end
+    end
 end //5th always ends
 
 /******************************************************/
