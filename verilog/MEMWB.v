@@ -17,6 +17,11 @@ module MEMWB(
 		input [4:0] 	WriteRegister_IN,
 		input 		WriteEnable_IN,
 
+		//FORWARD --> MEM/WB
+		//used if this is a load instruction with a store before it into the same address
+		input [31:0]	FWriteData_IN,
+		input 			forward_IN,
+
 	//MODULE OUTPUTS
 
 		//MEM/WB --> ID
@@ -59,12 +64,17 @@ always @(posedge CLOCK or negedge RESET) begin
 
 	//ELSE IF CLOCK IS HIGH
 	end else if(CLOCK) begin
-
+		
 		//IF MODULE IS NOT BEING STALLED AND IS NOT BEING FLUSHED
 		if(!STALL && !FLUSH) begin
 
 			//SET PIPELINE REGISTERS TO INPUTS
-			WriteData 	<= WriteData_IN;
+			if(forward_IN) begin
+				WriteData <= FWriteData_IN;
+			end
+			else begin
+				WriteData 	<= WriteData_IN;
+			end
 			WriteRegister 	<= WriteRegister_IN;
 			WriteEnable 	<= WriteEnable_IN;
 

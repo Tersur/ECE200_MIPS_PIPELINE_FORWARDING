@@ -7,6 +7,7 @@ module Hazard(
 		input 	RESET,
 	//	input	_jump_IDEXE,
 		input	Syscall_IN,
+		//input IDEXEmem_read_IN, // when a load is in IDEXE
 
 	//MODULE OUTPUTS
 
@@ -105,7 +106,7 @@ always @(posedge CLOCK or negedge RESET) begin
 
 		$display("");
 		$display("----- HAZARD UNIT -----");
-		$display("Multicycle Ring: %b", MultiCycleRing);
+		$display("Multicycle Ring: %b", MultiCycleRing2);
 
 		MultiCycleRing <= {{MultiCycleRing[3:0],MultiCycleRing[4]}};
 

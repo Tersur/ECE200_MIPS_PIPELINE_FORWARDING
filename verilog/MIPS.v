@@ -196,6 +196,9 @@ module MIPS (
 //WIRES ORIGINATING FROM THE FORWARDING UNIT
 //------------------------------------------
 
+	//FORWARD --> MEM/WB
+	wire [31:0] ForwardWriteData_toMEMWB;
+	wire		ForwardWriteDataEnable_toMEMWB;
 
 //------------------------------------------------
 //WIRES ORIGINATING FROM THE HAZARD DETECTION UNIT
@@ -534,6 +537,9 @@ MEMWB MEMWB(
 		.WriteData_IN(WriteData_MEMtoMEMWB),
 		.WriteRegister_IN(WriteRegister_EXEMEMtoMEMWB),
 		.WriteEnable_IN(WriteEnable_EXEMEMtoMEMWB),
+		// FROM FORWARD
+		.FWriteData_IN(ForwardWriteData_toMEMWB),
+		.forward_IN(ForwardWriteDataEnable_toMEMWB),
 
 	//MODULE OUTPUTS
 
@@ -603,6 +609,7 @@ Forward Forward(
 	.writeRegister_IN(WriteRegister_IDEXEtoEXEMEM),
 	.mem_write_IN(MemWrite_IDEXEtoEXEMEM),
 	.mem_read_data(MemWriteData_IDEXEtoEXEMEM),
+	.IDEXEmem_read_IN(MemRead_IDEXEtoEXEMEM),
 	
 	//EXE --> FORWARD
 	.aluResult_IN(ALUResult_EXEtoEXEMEM),
@@ -644,7 +651,10 @@ Forward Forward(
 	//FORWARD --> ID
 	.branch_operandA_OUT(b_branch_operandA),
     .branch_operandB_OUT(b_branch_operandB),
-    .branch_Forward(b_branch)
+    .branch_Forward(b_branch),
+
+	.MEMWBmemWriteData_OUT(ForwardWriteData_toMEMWB),
+	.MEMWBforward_OUT(ForwardWriteDataEnable_toMEMWB)
 
 );
 

@@ -52,7 +52,7 @@ module IDEXE(
 	
 		//ID/EXE --> EXE/MEM (MEM INFORMATION)
 		output [31:0]	MemWriteData_OUT,
-		output 		MemRead_OUT,
+		output 		MemRead_OUT, //ALSO SENT TO FORWARD
 		output		MemWrite_OUT,
 	
 		//ID/EXE --> EXE/MEM (WB INFORMATION)
@@ -98,7 +98,7 @@ assign WriteEnable_OUT		= WriteEnable;
 /********************************************/
 assign _RegisterRS_OUT		= RegisterS;
 assign _RegisterRT_OUT		= RegisterT;
-assign _immed_OUT			= immed;
+assign _immed_OUT				= immed;
 assign _jumpReg_OUT 		= jumpreg;
 assign if_jumpIDEXE_OUT			= jump;
 /********************************************/

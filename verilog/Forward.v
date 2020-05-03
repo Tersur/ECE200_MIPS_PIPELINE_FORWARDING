@@ -25,6 +25,7 @@ module Forward(
         input   [4:0] writeRegister_IN,
         input   mem_write_IN,
         input   [31:0] mem_read_data,
+        input   IDEXEmem_read_IN,
 
         //EXE --> FORWARD
         input   [31:0] aluResult_IN,
@@ -68,7 +69,11 @@ module Forward(
         //FORWARD --> MEM
         //connect to exemem and exe
         output mem_forward,
-        output [31:0] mem_write_data // to EXEMEM
+        output [31:0] mem_write_data, // to EXEMEM
+
+        //FORWARD --> MEMWB
+        output [31:0] MEMWBmemWriteData_OUT,
+        output        MEMWBforward_OUT
 
 
 );
@@ -96,6 +101,9 @@ reg [31:0]  S_operandB;
 reg [31:0] memdata;
 reg _forward4;
 
+reg [31:0] EXEMEMMemWriteData;
+reg MEMWriteDataforward;
+
 assign RegS = _RegisterRS_IN;
 assign RegT = _RegisterRT_IN;
 
@@ -118,6 +126,9 @@ assign mem_write_data = memdata;
 
 assign _forward = _forward_;
 assign _forwardIF = _forward2;
+
+assign MEMWBmemWriteData_OUT = EXEMEMMemWriteData;
+assign MEMWBforward_OUT = MEMWriteDataforward;
 
 
 /******************************************************/
@@ -859,9 +870,9 @@ end //4th always end
 /*forwarding for loads
 */
 always @(negedge CLOCK)begin
-    if(mem_read_IN) begin
+    if(IDEXEmem_read_IN) begin //if a load is in IDEXE
         S_operandB <= _operandB_IN;
-        if(_RegisterRS_IN == RegDEXE)begin  //if regs in ID/EXE == EXE/MEM
+        if(_RegisterRS_IN == RegDEXE)begin  // if regs in ID/EXE == EXE/MEM
             if(mem_read_IN)begin // if EXE/MEM is reading from memory
                 S_operandA <= MEMREAD_IN; // data read into MEM put into operand
             end
@@ -886,6 +897,14 @@ always @(negedge CLOCK)begin
             S_operandA <= _operandA_IN;
             _forward4 <= 1'b0;
         end
+
+        // if instruction before is a store, need to check if it stores in the same address and this is loading from and forward the address
+        if(MemWrite_IN) begin // if instruction in EXE/MEM is a store
+            if(aluResult_IN == RegvalueEXEMEM_IN)begin // check if store(EXEMEM) and load(EXE) access the same address
+                EXEMEMMemWriteData <= MemWriteData_IN; // retrieve MemWriteData from EXEMEM
+                MEMWriteDataforward <= 1'b1;
+            end
+        end
     end
 end //5th always ends
 
@@ -899,6 +918,7 @@ always @(posedge CLOCK)begin
     _forward4 <= 1'b0;
     _forward2 = 1'b0;
     _forward3 = 1'b0;
+    MEMWriteDataforward <= 1'b0;
 end //6th always ends
 
 endmodule
