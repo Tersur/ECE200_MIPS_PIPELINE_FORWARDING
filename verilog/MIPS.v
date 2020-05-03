@@ -603,6 +603,7 @@ Forward Forward(
 	.writeRegister_IN(WriteRegister_IDEXEtoEXEMEM),
 	.mem_write_IN(MemWrite_IDEXEtoEXEMEM),
 	.mem_read_data(MemWriteData_IDEXEtoEXEMEM),
+	.WritEnableIDEXE_IN(WriteEnable_IDEXEtoEXEMEM),
 	
 	//EXE --> FORWARD
 	.aluResult_IN(ALUResult_EXEtoEXEMEM),
@@ -612,10 +613,12 @@ Forward Forward(
 	.mem_read_IN(MemRead_EXEMEMtoMEM), //relates to .MEMREAD_IN(WriteData_MEMtoMEMWB),
 	.MemWrite_IN(MemWrite_EXEMEMtoDM),
 	.MemWriteData_IN(MemWriteData_EXEMEMtoMEM),
+	.WriteEnableEXEMEM_IN(WriteEnable_EXEMEMtoMEMWB),
 	
 	//MEM/WB --> FORWARD
 	.RegvalueMEMWB_IN(WriteData_MEMWBtoID),
 	.RegisterMEMWB_IN(WriteRegister_MEMWBtoID),
+	.WriteEnableMEMWB_IN(WriteEnable_MEMWBtoID),
 
 	//MEM --> FORWARD
 	.MEMREAD_IN(WriteData_MEMtoMEMWB),

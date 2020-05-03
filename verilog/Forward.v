@@ -25,6 +25,7 @@ module Forward(
         input   [4:0] writeRegister_IN,
         input   mem_write_IN,
         input   [31:0] mem_read_data,
+        input   WritEnableIDEXE_IN,
 
         //EXE --> FORWARD
         input   [31:0] aluResult_IN,
@@ -33,8 +34,9 @@ module Forward(
         input   [31:0] RegvalueEXEMEM_IN,
         input   [4:0] RegisterEXEMEM_IN,
         input       mem_read_IN,
-        input [31:0] MemWrite_IN,
+        input       MemWrite_IN,
 	    input [31:0] MemWriteData_IN,
+        input       WriteEnableEXEMEM_IN,
 
         //MEM --> FORWARD
         input  [31:0] MEMREAD_IN,
@@ -42,6 +44,7 @@ module Forward(
         //MEM/WB --> FORWARD
         input   [31:0] RegvalueMEMWB_IN,
         input   [4:0] RegisterMEMWB_IN,
+        input       WriteEnableMEMWB_IN,
 
 		//Regfile WB --> FORWARD
         input [31:0] _RegisterValue_IN,		
@@ -406,7 +409,7 @@ end //1st always end
 always begin
     if(_jump_IN)begin
 
-        if(jump_RegisterID == writeRegister_IN)begin
+        if((jump_RegisterID == writeRegister_IN) && WritEnableIDEXE_IN)begin
             if(_RegisterRT_IN != 0)begin
                 _jump_Register = aluResult_IN;
             end
@@ -415,7 +418,7 @@ always begin
             end
             _forward2 = 1'b1;
         end
-        else if(jump_RegisterID == RegDEXE)begin
+        else if((jump_RegisterID == RegDEXE) && WriteEnableEXEMEM_IN)begin
 
             if(!mem_read_IN)begin
                 _jump_Register = RegvalueEXEMEM_IN;
@@ -427,14 +430,14 @@ always begin
             _forward2 = 1'b1;
         end
 
-        else if(jump_RegisterID == RegDMEM)begin
+        else if((jump_RegisterID == RegDMEM) && WriteEnableMEMWB_IN)begin
 
             _jump_Register = RegvalueMEMWB_IN;
             _forward2 = 1'b1;
 
         end
 
-        else if(jump_RegisterID==RegWB) begin
+        else if((jump_RegisterID==RegWB) && write_IN) begin
             _jump_Register = _RegisterValue_IN;
             _forward2 = 1'b1;
         end
@@ -455,8 +458,9 @@ end //2nd always ends
 /*forwarding for branches
 */
 always begin
-    if(if_branchID)begin
-        if(RegisterRSID_IN ==writeRegister_IN)begin
+    if(if_branchID )begin
+        if((RegisterRSID_IN ==writeRegister_IN) && WritEnableIDEXE_IN)begin
+            // $display("\nRegsval: %d Regtval: %d\n", aluResult_IN, aluResult_IN);
             //RS
             if(RegisterRSID_IN)begin
                 branch_operandA = aluResult_IN;
@@ -465,7 +469,7 @@ always begin
                 branch_operandA = branch_operandA_IN;
             end
             //RT
-            if(RegisterRTID_IN == writeRegister_IN)begin
+            if((RegisterRTID_IN == writeRegister_IN) && WritEnableIDEXE_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = aluResult_IN;
                 end
@@ -475,16 +479,20 @@ always begin
                 _forward3 = 1'b1;
                 
             end
-            else if(RegisterRTID_IN == RegDEXE)begin
-                if(RegisterRTID_IN)begin
+            else if((RegisterRTID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+                if((RegisterRTID_IN) && !mem_read_IN)begin
                     branch_operandB = RegvalueEXEMEM_IN;
                 end
+                else if((RegisterRTID_IN) && mem_read_IN)begin
+                    branch_operandB = MEMREAD_IN;
+                end
+
                 else if(!RegisterRTID_IN)begin
                     branch_operandB = branch_operandB_IN;
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegDMEM)begin
+            else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
                 end
@@ -493,7 +501,7 @@ always begin
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegWB)begin
+            else if((RegisterRTID_IN == RegWB) && write_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = _RegisterValue_IN;
                 end
@@ -508,16 +516,19 @@ always begin
             end
     
         end
-        else if(RegisterRSID_IN == RegDEXE)begin
-            if(RegisterRSID_IN)begin
+        else if((RegisterRSID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+            if(RegisterRSID_IN && !mem_read_IN)begin
                 branch_operandA = RegvalueEXEMEM_IN;
+            end
+            else if(RegisterRSID_IN && mem_read_IN)begin
+                branch_operandA = MEMREAD_IN;
             end
             else if(!RegisterRSID_IN)begin
                 branch_operandA = branch_operandA_IN;
             end
 
             //RT
-            if(RegisterRTID_IN == writeRegister_IN)begin
+            if((RegisterRTID_IN == writeRegister_IN) && WritEnableIDEXE_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = aluResult_IN;
                 end
@@ -527,16 +538,20 @@ always begin
                 _forward3 = 1'b1;
                 
             end
-            else if(RegisterRTID_IN == RegDEXE)begin
-                if(RegisterRTID_IN)begin
+            else if((RegisterRTID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+                if((RegisterRTID_IN) && !mem_read_IN)begin
                     branch_operandB = RegvalueEXEMEM_IN;
                 end
+                else if((RegisterRTID_IN) && mem_read_IN)begin
+                    branch_operandB = MEMREAD_IN;
+                end
+
                 else if(!RegisterRTID_IN)begin
                     branch_operandB = branch_operandB_IN;
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegDMEM)begin
+            else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
                 end
@@ -545,7 +560,7 @@ always begin
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegWB)begin
+            else if((RegisterRTID_IN == RegWB) && write_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = _RegisterValue_IN;
                 end
@@ -561,7 +576,7 @@ always begin
         end
 
 
-        else if(RegisterRSID_IN == RegDMEM)begin
+        else if((RegisterRSID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
             if(RegisterRSID_IN)begin
                 branch_operandA = RegvalueMEMWB_IN;
             end
@@ -570,7 +585,7 @@ always begin
             end
 
            //RT
-            if(RegisterRTID_IN == writeRegister_IN)begin
+            if((RegisterRTID_IN == writeRegister_IN) && WritEnableIDEXE_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = aluResult_IN;
                 end
@@ -580,16 +595,20 @@ always begin
                 _forward3 = 1'b1;
                 
             end
-            else if(RegisterRTID_IN == RegDEXE)begin
-                if(RegisterRTID_IN)begin
+            else if((RegisterRTID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+                if((RegisterRTID_IN) && !mem_read_IN)begin
                     branch_operandB = RegvalueEXEMEM_IN;
                 end
+                else if((RegisterRTID_IN) && mem_read_IN)begin
+                    branch_operandB = MEMREAD_IN;
+                end
+
                 else if(!RegisterRTID_IN)begin
                     branch_operandB = branch_operandB_IN;
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegDMEM)begin
+            else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
                 end
@@ -598,7 +617,7 @@ always begin
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegWB)begin
+            else if((RegisterRTID_IN == RegWB) && write_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = _RegisterValue_IN;
                 end
@@ -614,7 +633,7 @@ always begin
         end
 
         
-        else if(RegisterRSID_IN == RegWB)begin
+        else if((RegisterRSID_IN == RegWB) && write_IN)begin
             if(RegisterRSID_IN)begin
                 branch_operandA = _RegisterValue_IN;
             end
@@ -623,7 +642,7 @@ always begin
             end
 
            //RT
-            if(RegisterRTID_IN == writeRegister_IN)begin
+            if((RegisterRTID_IN == writeRegister_IN) && WritEnableIDEXE_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = aluResult_IN;
                 end
@@ -633,16 +652,20 @@ always begin
                 _forward3 = 1'b1;
                 
             end
-            else if(RegisterRTID_IN == RegDEXE)begin
-                if(RegisterRTID_IN)begin
+            else if((RegisterRTID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+                if((RegisterRTID_IN) && !mem_read_IN)begin
                     branch_operandB = RegvalueEXEMEM_IN;
                 end
+                else if((RegisterRTID_IN) && mem_read_IN)begin
+                    branch_operandB = MEMREAD_IN;
+                end
+
                 else if(!RegisterRTID_IN)begin
                     branch_operandB = branch_operandB_IN;
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegDMEM)begin
+            else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
                 end
@@ -651,7 +674,7 @@ always begin
                 end
                 _forward3 = 1'b1;
             end
-            else if(RegisterRTID_IN == RegWB)begin
+            else if((RegisterRTID_IN == RegWB) && write_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = _RegisterValue_IN;
                 end
@@ -669,7 +692,7 @@ always begin
         //else
         else begin
             branch_operandA = branch_operandA_IN;
-            if(RegisterRTID_IN == writeRegister_IN)begin
+            if((RegisterRTID_IN == writeRegister_IN) && WritEnableIDEXE_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = aluResult_IN;
                 end
@@ -679,9 +702,12 @@ always begin
                 _forward3 = 1'b1;
             end
 
-            else if(RegisterRTID_IN == RegDEXE)begin
-                if(RegisterRTID_IN)begin
+            else if((RegisterRTID_IN == RegDEXE) && WriteEnableEXEMEM_IN)begin
+                if(RegisterRTID_IN && !mem_read_IN)begin
                     branch_operandB = RegvalueEXEMEM_IN;
+                end
+                else if(RegisterRTID_IN && mem_read_IN)begin
+                    branch_operandB = MEMREAD_IN;
                 end
                 else if(!RegisterRTID_IN)begin
                     branch_operandB = branch_operandB_IN;
@@ -689,7 +715,7 @@ always begin
                 _forward3 = 1'b1;
             end
 
-            else if(RegisterRTID_IN == RegDMEM)begin
+            else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
                 end
@@ -699,7 +725,7 @@ always begin
                 _forward3 = 1'b1;
             end
 
-            else if(RegisterRTID_IN == RegWB)begin
+            else if((RegisterRTID_IN == RegWB) && write_IN)begin
                 if(RegisterRTID_IN)begin
                     branch_operandB = _RegisterValue_IN;
                 end
@@ -729,7 +755,7 @@ always @(negedge CLOCK) begin
             if(mem_read_IN)begin
                 S_operandA <= MEMREAD_IN;
             end
-            else begin
+            else if(!mem_read_IN && !MemWrite_IN) begin
                 _operandA <= RegvalueEXEMEM_IN;
             end
 
@@ -745,21 +771,21 @@ always @(negedge CLOCK) begin
                 end
             end
 
-            else if(_RegisterRT_IN == RegDMEM)begin
+            else if((_RegisterRT_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 memdata <= RegvalueMEMWB_IN;
             end
 
-            else if(_RegisterRT_IN == RegWB)begin
+            else if((_RegisterRT_IN == RegWB) &&write_IN)begin
                 memdata <= _RegisterValue_IN;
             end
 
             else begin
-                memdata <= mem_write_data;
+                memdata <= mem_read_data;
             end
             _forward4 <= 1'b1;
         end
 
-        else if(_RegisterRS_IN == RegDMEM)begin
+        else if((_RegisterRS_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
             S_operandA <= RegvalueMEMWB_IN;
 
             if(_RegisterRT_IN == RegDEXE)begin
@@ -774,21 +800,21 @@ always @(negedge CLOCK) begin
                 end
             end
 
-            else if(_RegisterRT_IN == RegDMEM)begin
+            else if((_RegisterRT_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 memdata <= RegvalueMEMWB_IN;
             end
 
-            else if(_RegisterRT_IN == RegWB)begin
+            else if((_RegisterRT_IN == RegWB) && write_IN)begin
                 memdata <= _RegisterValue_IN;
             end
 
             else begin
-                memdata <= mem_write_data;
+                memdata <= mem_read_data;
             end
             _forward4 <= 1'b1;
         end
 
-        else if(_RegisterRS_IN == RegWB)begin
+        else if((_RegisterRS_IN == RegWB) && write_IN)begin
             S_operandA <= _RegisterValue_IN;
 
            if(_RegisterRT_IN == RegDEXE)begin
@@ -803,23 +829,23 @@ always @(negedge CLOCK) begin
                 end
             end
 
-            else if(_RegisterRT_IN == RegDMEM)begin
+            else if((_RegisterRT_IN == RegDMEM) &&WriteEnableMEMWB_IN)begin
                 memdata <= RegvalueMEMWB_IN;
             end
 
-            else if(_RegisterRT_IN == RegWB)begin
+            else if((_RegisterRT_IN == RegWB) && write_IN)begin
                 memdata <= _RegisterValue_IN;
             end
 
             else begin
-                memdata <= mem_write_data;
+                memdata <= mem_read_data;
             end
             _forward4 <= 1'b1;
         end
 
         else begin
             S_operandA <= _operandA_IN;
-            $display("\nrs %d rt  %d rd %d\n",_RegisterRS_IN, _RegisterRT_IN, writeRegister_IN);
+            // $display("\nrs %d rt  %d rd %d\n",_RegisterRS_IN, _RegisterRT_IN, writeRegister_IN);
             if(_RegisterRT_IN == RegDEXE)begin
                 if(mem_read_IN)begin
                     memdata <= MEMREAD_IN;
@@ -833,18 +859,18 @@ always @(negedge CLOCK) begin
                 _forward4 <= 1'b1;
             end
 
-            else if(_RegisterRT_IN == RegDMEM)begin
+            else if((_RegisterRT_IN == RegDMEM) &&WriteEnableMEMWB_IN)begin
                 memdata <= RegvalueMEMWB_IN;
                 _forward4 <= 1'b1;
             end
 
-            else if(_RegisterRT_IN == RegWB)begin
+            else if((_RegisterRT_IN == RegWB) && write_IN)begin
                 memdata <= _RegisterValue_IN;
                 _forward4 <= 1'b1;
             end
 
             else begin
-                memdata <= mem_write_data;
+                memdata <= mem_read_data;
                 _forward4 <= 1'b0;
             end
         end
@@ -859,7 +885,34 @@ end //4th always end
 /*forwarding for loads
 */
 always @(negedge CLOCK)begin
-    
+    if(mem_read_IN) begin
+        S_operandB <= _operandB_IN;
+        if(_RegisterRS_IN == RegDEXE)begin  //if regs in ID/EXE == EXE/MEM
+            if(mem_read_IN)begin // if EXE/MEM is reading from memory
+                S_operandA <= MEMREAD_IN; // data read into MEM put into operand
+            end
+            else begin
+                S_operandA <= RegvalueEXEMEM_IN; // reg value from EXEMEM
+            end
+            _forward4 <= 1'b1;
+        end
+        // _RegisterRT_IN will be replaced with data, so no need to forward to it
+        
+        else if(_RegisterRS_IN == RegDMEM)begin // if regs in ID/EXE == MEM/WB
+            S_operandA <= RegvalueMEMWB_IN;
+            _forward4 <= 1'b1;
+        end
+
+        else if(_RegisterRS_IN == RegWB)begin
+            S_operandA <= _RegisterValue_IN;
+            _forward4 <= 1'b1;
+        end
+
+        else begin
+            S_operandA <= _operandA_IN;
+            _forward4 <= 1'b0;
+        end
+    end
 end //5th always ends
 
 /******************************************************/

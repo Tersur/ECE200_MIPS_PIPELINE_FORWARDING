@@ -52,24 +52,24 @@ always @(posedge CLOCK or negedge RESET) begin
 
 		//IF MODULE IS NOT BEING STALLED AND IS NOT BEING FLUSHED 
 		if(!STALL) begin
-
 			//SET PIPELINE REGISTERS TO INPUTS
 			Instruction 		<= Instruction_IN;
 			InstructionAddressPlus4 <= InstructionAddressPlus4_IN;
+		end
+
+		//ELSE IF MODULE IS BEING STALLED
+		else if (STALL) begin
+
+			//DO NOTHING
+
+		end
 
 		//ELSE IF MODULE IS BEING FLUSHED
-		end if (FLUSH) begin
-
+		if (FLUSH) begin
 			//SET PIPELINE REGISTERS TO 0
 			Instruction 		<= 0;
 			InstructionAddressPlus4 <= 0;
 		end
-		//ELSE IF MODULE IS BEING STALLED
-		// end else if (STALL) begin
-
-		// 	//DO NOTHING
-
-		// end
 
 	end
 

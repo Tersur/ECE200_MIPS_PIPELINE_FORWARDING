@@ -55,11 +55,13 @@ always @(negedge CLOCK) begin
 		MultiCycleRing2 = 4'b0001;
 		STALL	<= 1'b1;
 		FLUSHIFID <= 1'b1;
+		FLUSHIDEXE <= 1'b1;
 	end
 	else if(MultiCycleRing2[3])begin 
 		MultiCycleRing2 = 4'b0000;
 		STALL	<= 1'b0;
 		FLUSHIFID <= 1'b0;
+		FLUSHIDEXE <= 1'b0;
 		syscall <= 1'b0;
 	end
 
@@ -72,21 +74,21 @@ always @(posedge CLOCK)begin
 		syscall <= 1;
 	end
 
-	if(MultiCycleRing2[1])begin
-		FLUSHIDEXE <= 1'b1;
-	end
-	else begin
-		FLUSHIDEXE <= 1'b0;
-	end
+	// if(MultiCycleRing2[1])begin
+	// 	FLUSHIDEXE <= 1'b1;
+	// end
+	// else begin
+	// 	FLUSHIDEXE <= 1'b0;
+	// end
 
-	if(MultiCycleRing2[2])begin
+	if(MultiCycleRing2[1])begin
 		FLUSHEXEMEM <= 1'b1;
 	end
 	else begin
 		FLUSHEXEMEM <= 1'b0;
 	end
 
-	if(MultiCycleRing2[3])begin
+	if(MultiCycleRing2[2])begin
 		FLUSHMEMWB <= 1'b1;
 	end
 	else begin
