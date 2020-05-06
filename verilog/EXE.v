@@ -15,8 +15,11 @@ module EXE(
 		//FORWARD --> EXE
 		input [31:0] 	FOperandA_IN,		
 		input [31:0] 	FOperandB_IN,
+		input  [31:0] S_operandA_IN,
+        input  [31:0] S_operandB_IN,
 
 		input 		forward,
+		input		Fmem_forwardIN,
 		//input		forwardMEM,
 		/************************/
 	//MODULE OUTPUT
@@ -41,13 +44,22 @@ wire [31:0] OperandB;
 always begin
 	case (forward)
 		1'b0:begin
-		OperandA = OperandA_IN;
-		OperandB = OperandB_IN;
+			case(Fmem_forwardIN)
+				1'b1:begin
+				OperandA = S_operandA_IN;
+				OperandB = S_operandB_IN;
+				end
+				default: begin
+				OperandA = OperandA_IN;
+				OperandB = OperandB_IN;
+				end
+			endcase
 		end
 		1'b1:begin
 		OperandA = FOperandA_IN;
 		OperandB = FOperandB_IN;
 		end
+
 	endcase
 end
 /*******************************/

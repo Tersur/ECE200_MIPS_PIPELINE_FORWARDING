@@ -28,6 +28,9 @@ module IDEXE(
 		/**************************************/
 		input [4:0] RegisterRS_IN,
 		input [4:0] RegisterRT_IN,
+		input		immed_IN,
+		input		jumpReg_IN,
+		input		if_jumpIDEXE_IN,
 		/**************************************/
 
 	//MODULE OUTPUTS
@@ -42,6 +45,9 @@ module IDEXE(
 		//ID/EXE --> FORWARD
 		output [4:0] _RegisterRS_OUT,		
 		output [4:0] _RegisterRT_OUT,
+		output		_immed_OUT,
+		output		_jumpReg_OUT,
+		output		if_jumpIDEXE_OUT,
 		/************************************/
 	
 		//ID/EXE --> EXE/MEM (MEM INFORMATION)
@@ -71,6 +77,9 @@ reg		WriteEnable;
 /********************************/
 reg  [4:0] RegisterS;
 reg  [4:0] RegisterT;
+reg 		immed;
+reg 		jumpreg;
+reg			jump;
 /*******************************/
 
 //ASSIGN OUTPUTS TO PIPELINE REGISTERS
@@ -89,6 +98,9 @@ assign WriteEnable_OUT		= WriteEnable;
 /********************************************/
 assign _RegisterRS_OUT		= RegisterS;
 assign _RegisterRT_OUT		= RegisterT;
+assign _immed_OUT			= immed;
+assign _jumpReg_OUT 		= jumpreg;
+assign if_jumpIDEXE_OUT			= jump;
 /********************************************/
 
 //WHEN CLOCK RISES OR RESET FALLS
@@ -113,6 +125,9 @@ always @(posedge CLOCK or negedge RESET) begin
 		/*********************/
 		RegisterS <= 0;
 		RegisterT <= 0;
+		immed <= 0;
+		jumpreg <= 0;
+		jump	<= 0;
 		/********************/
 
 	//ELSE IF CLOCK IS HIGH
@@ -151,6 +166,9 @@ always @(posedge CLOCK or negedge RESET) begin
 			/************************************/
 			RegisterS <= RegisterRS_IN;
 			RegisterT <= RegisterRT_IN;
+			immed <= immed_IN;
+			jumpreg <= jumpReg_IN;
+			jump	<= if_jumpIDEXE_IN;
 			/***********************************/
 	
 		//ELSE IF MODULE IS BEING FLUSHED
@@ -172,6 +190,9 @@ always @(posedge CLOCK or negedge RESET) begin
 			/*********************/
 			RegisterS <= 0;
 			RegisterT <= 0;
+			immed <= 0;
+			jumpreg <= 0;
+			jump <= 0;
 			/********************/
 	
 		//ELSE IF MODULE IS BEING STALLED

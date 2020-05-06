@@ -51,24 +51,24 @@ always @(posedge CLOCK or negedge RESET) begin
 		$display("Instruction Address + 4:\t%x", InstructionAddressPlus4);
 
 		//IF MODULE IS NOT BEING STALLED AND IS NOT BEING FLUSHED 
-		if(!STALL && !FLUSH) begin
-
+		if(!STALL) begin
 			//SET PIPELINE REGISTERS TO INPUTS
 			Instruction 		<= Instruction_IN;
 			InstructionAddressPlus4 <= InstructionAddressPlus4_IN;
-
-		//ELSE IF MODULE IS BEING FLUSHED
-		end else if (FLUSH) begin
-
-			//SET PIPELINE REGISTERS TO 0
-			Instruction 		<= 0;
-			InstructionAddressPlus4 <= 0;
+		end
 
 		//ELSE IF MODULE IS BEING STALLED
-		end else if (STALL) begin
+		else if (STALL) begin
 
 			//DO NOTHING
 
+		end
+
+		//ELSE IF MODULE IS BEING FLUSHED
+		if (FLUSH) begin
+			//SET PIPELINE REGISTERS TO 0
+			Instruction 		<= 0;
+			InstructionAddressPlus4 <= 0;
 		end
 
 	end

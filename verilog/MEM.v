@@ -1,7 +1,6 @@
 module MEM(
 
 	//MODULE INPUTS
-
 		//EXE/MEM --> MEM
 		input [31:0] 		MemWriteData_IN,
 		input [5:0] 		MemControl_IN,	
@@ -33,7 +32,6 @@ assign WriteData_OUT 	= MemRead_IN ? data_read_aligned : ALUResult_IN;
  * Preventing using higher versions of verilator
  */
 always begin
-
 	data_read_aligned = MemWriteData_IN;
 
 	//CASE STATEMENT FOR MEM CONTROL WORD

@@ -21,6 +21,11 @@ module EXEMEM(
 		input [4:0]  	WriteRegister_IN,
 		input 		WriteEnable_IN,
 
+		//FORWARD --> EXE/MEM
+		input [31:0] Fmem_data,
+		input Fmem_forwardIN,
+		
+
 	// MODULE OUTPUTS
 
 		//EXE/MEM --> MEM
@@ -56,6 +61,10 @@ assign ALUResult_OUT 		= ALUResult;
 assign WriteRegister_OUT 	= WriteRegister;
 assign WriteEnable_OUT 		= WriteEnable;
 
+// always @(negedge CLOCK)begin
+// 	ALUResult <= 0;
+// end
+
 //WHEN CLOCK RISES OR RESET FALLS
 always @(posedge CLOCK or negedge RESET) begin
 
@@ -90,7 +99,10 @@ always @(posedge CLOCK or negedge RESET) begin
 		if(!STALL && !FLUSH) begin
 
 			//SET PIPELINE REGISTERS TO INPUTS
-			MemWriteData 	<= MemWriteData_IN;	
+			if(Fmem_forwardIN)
+				MemWriteData <= Fmem_data;
+			else
+				MemWriteData 	<= MemWriteData_IN;	
 			MemControl 	<= MemControl_IN;
 			MemRead 	<= MemRead_IN;
 			MemWrite 	<= MemWrite_IN;

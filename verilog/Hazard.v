@@ -4,7 +4,12 @@ module Hazard(
 	
 		//CONTROL SIGNALS
 		input	CLOCK,
-		input 	RESET,	
+		input 	RESET,
+	//	input	_jump_IDEXE,
+		input	Syscall_IN,
+		
+		//FORWARD --> HAZARD
+		input	STALL_IN,
 
 	//MODULE OUTPUTS
 
@@ -18,39 +23,94 @@ module Hazard(
 		output 	FLUSH_EXEMEM,
 	
 		output 	STALL_MEMWB,
-		output 	FLUSH_MEMWB
+		output 	FLUSH_MEMWB,
+		output	Syscall_OUT
 
 );
 
 reg [4:0] MultiCycleRing;
+reg [3:0] MultiCycleRing2;
+reg [1:0] MultiCycleRing3;
 
-// assign FLUSH_MEMWB = 1'b0;
-// assign STALL_MEMWB = 1'b0;
-
-// assign FLUSH_EXEMEM = 1'b0;
-// assign STALL_EXEMEM = (FLUSH_MEMWB || STALL_MEMWB);
-
-// assign FLUSH_IDEXE = 1'b0;
-// assign STALL_IDEXE = (FLUSH_EXEMEM || STALL_EXEMEM);
-
-// assign FLUSH_IFID = !(MultiCycleRing[0]);
-// assign STALL_IFID = (FLUSH_IDEXE || STALL_IDEXE || FLUSH_IFID);
+reg		  STALL;
+reg		  FLUSHIDEXE;
+reg		  FLUSHEXEMEM;
+reg		  FLUSHMEMWB;
+reg		  FLUSHIFID;
+reg		syscall;
 	
 /*********************************/
-assign FLUSH_MEMWB = 1'b0;
+assign FLUSH_MEMWB = FLUSHMEMWB;
 assign STALL_MEMWB = 1'b0;
 
-assign FLUSH_EXEMEM = 1'b0;
+assign FLUSH_EXEMEM = FLUSHEXEMEM;
 assign STALL_EXEMEM = 1'b0;
 
-assign FLUSH_IDEXE = 1'b0;
-assign STALL_IDEXE = 1'b0;
+assign FLUSH_IDEXE = FLUSHIDEXE;
+assign STALL_IDEXE = STALL;
 
-assign FLUSH_IFID = 1'b0;
-assign STALL_IFID = 1'b0;
-	
+assign FLUSH_IFID = FLUSHIFID;
+assign STALL_IFID = STALL;
+
+assign Syscall_OUT = syscall;
+
+
+always @(negedge CLOCK)begin
+	if(STALL_IN)begin
+		MultiCycleRing3 = 2'b01;
+		FLUSHIDEXE <= 1'b1;
+		STALL	<= 1'b1;
+	end
+	if(MultiCycleRing3[1]) begin
+		MultiCycleRing3 = 2'b0;
+		FLUSHIDEXE <= 1'b0;
+		STALL	<= 1'b0;
+	end
+end
+
+always @(posedge CLOCK) begin
+	MultiCycleRing3 = {{MultiCycleRing3[0], MultiCycleRing3[1]}};
+end
 /*******************************/
+always @(negedge CLOCK) begin
+	if(Syscall_IN)begin
+		MultiCycleRing2 = 4'b0001;
+		STALL	<= 1'b1;
+		FLUSHIFID <= 1'b1;
+		FLUSHIDEXE <= 1'b1;
+	end
+	else if(MultiCycleRing2[3])begin 
+		MultiCycleRing2 = 4'b0000;
+		STALL	<= 1'b0;
+		FLUSHIFID <= 1'b0;
+		FLUSHIDEXE <= 1'b0;
+		syscall <= 1'b0;
+	end
 
+end
+
+always @(posedge CLOCK)begin
+	MultiCycleRing2 = {{MultiCycleRing2[2:0], MultiCycleRing2[3]}};
+
+	if(MultiCycleRing2[3])begin
+		syscall <= 1;
+	end
+
+	if(MultiCycleRing2[1])begin
+		FLUSHEXEMEM <= 1'b1;
+	end
+	else begin
+		FLUSHEXEMEM <= 1'b0;
+	end
+
+	if(MultiCycleRing2[2])begin
+		FLUSHMEMWB <= 1'b1;
+	end
+	else begin
+		FLUSHMEMWB <= 1'b0;
+	end	
+
+end
 
 always @(posedge CLOCK or negedge RESET) begin
 

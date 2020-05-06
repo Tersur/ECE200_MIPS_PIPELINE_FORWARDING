@@ -8,7 +8,12 @@ module ID(
 		
 		//IF/ID --> ID
 		input [31:0] 	Instruction_IN, 		
-		input [31:0] 	InstructionAddressPlus4_IN,	
+		input [31:0] 	InstructionAddressPlus4_IN,
+
+		//FORWARD --> ID 
+		input [31:0] branch_operandA_IN,
+		input [31:0] branch_operandB_IN,
+		input 		 branch_Forward_IN,	
 
 		//MEM/WB --> ID
 		input [31:0] 	WriteData_IN,			
@@ -39,10 +44,17 @@ module ID(
 		/******************************/
 		output [4:0]     	RegisterRS_OUT,  
 		output [4:0]      	RegisterRT_OUT,
+		// output RegDest_OUT;
+		// output SignOrZero_OUT,
 
 		//ID --> FORWARD
-		inout [31:0] _RegisterValue_OUT,		
-		inout [4:0] _Register_OUT,
+		output [31:0] _RegisterValue_OUT,		
+		output [4:0] _Register_OUT,
+		output 		_writeEnable_OUT,
+		output		if_immed_OUT,
+		output		if_jumpReg_OUT,
+		output		if_jumpID_OUT,
+		output		if_branchID_OUT,
 		/******************************/
 
 		//ID --> SYSTEM
@@ -74,8 +86,14 @@ assign RegisterRT_OUT = Instruction_IN[20:16];
 
 wire [31:0]    	RegisterRSValue;
 wire [31:0]    	RegisterRTValue;
-wire [31:0]		regvalue;
-wire [4:0]		regno;
+/************************************/
+wire [31:0]		regvalue_from_Regfile;
+wire [4:0]		reg_from_Regfile;
+wire			write_enable;
+
+wire [31:0]  sourceRegister;
+wire [31:0]  targetRegister;
+/*************************************/
 
 RegFile RegFile(
 
@@ -96,10 +114,11 @@ RegFile RegFile(
 
 		.ReadData1_OUT(RegisterRSValue),
 		.ReadData2_OUT(RegisterRTValue),
-		/*************************************/
-		.WBRegisterValue_OUT(regvalue),
-		.WBRegister_OUT(regno)
-		/*************************************/
+		/*****************************************/
+		.write_OUT(write_enable),
+		.WBRegisterValue_OUT(regvalue_from_Regfile),
+		.WBRegister_OUT(reg_from_Regfile)
+		/*****************************************/
     
 );
 
@@ -113,8 +132,10 @@ wire		RegWrite;
 wire		JumpRegister;		
 wire		SignOrZero;		
 wire		Syscall;		
-wire [5:0]	ALUControl;		
-
+wire [5:0]	ALUControl;
+/**************************/	
+wire		immed;
+/*************************/
 Decoder Decoder(
 
 	//MODULE INPUTS
@@ -136,20 +157,33 @@ Decoder Decoder(
     		.ALUControl(ALUControl),
 		/* verilator lint_off PINCONNECTEMPTY */
     		.MultRegAccess(),   	
-    		.ALUSrc() 
+    		.ALUSrc(immed) 
 		/* verilator lint_on PINCONNECTEMPTY */
 
 );
 
 wire AltPCEnable;
+/******************************************/
+always begin
+	if(!branch_Forward_IN)begin
+		sourceRegister = RegisterRSValue;
+		targetRegister = RegisterRTValue;
+	end
+	if(branch_Forward_IN)begin
+		sourceRegister = branch_operandA_IN;
+		targetRegister = branch_operandB_IN;
+	end
+	// $display("\nRSID %d RTID %d\n", sourceRegister, targetRegister);
 
+end
+/****************************************/
 Compare Compare(
 
 	//MODULE INPUTS
 	
 		.Jump_IN(Jump), 
-		.OperandA_IN(RegisterRSValue),
-    		.OperandB_IN(RegisterRTValue),
+		.OperandA_IN(sourceRegister),
+    		.OperandB_IN(targetRegister),
 		.Opcode_IN(Opcode),
 	      	.RegisterRT_IN(RegisterRT),
 
@@ -167,11 +201,10 @@ NextInstructionCalculator NextInstructionCalculator(
 
 		.Immediate_IN(Immediate),
 		.Index_IN(Index),
-    		.InstructionAddressPlus4_IN(InstructionAddressPlus4_IN),
-    		.Jump_IN(Jump), 
-    		.JumpRegister_IN(JumpRegister), 
-    		.RegisterValue_IN(RegisterRSValue), 
-
+		.InstructionAddressPlus4_IN(InstructionAddressPlus4_IN),
+		.Jump_IN(Jump), 
+		.JumpRegister_IN(JumpRegister), 
+		.RegisterValue_IN(RegisterRSValue),
 	//MODULE OUTPUTS
     	
 		.NextInstructionAddress_OUT(AltPC)
@@ -198,9 +231,15 @@ assign AltPCEnable_OUT 		= AltPCEnable;
 assign AltPC_OUT 		= AltPC;
 assign Syscall_OUT 		= Syscall;
 
-/*************************************/
-assign _RegisterValue_OUT = regvalue;		
-assign _Register_OUT = regno;
-/*************************************/
+/*************************************************/
+assign _RegisterValue_OUT = regvalue_from_Regfile;		
+assign _Register_OUT = reg_from_Regfile;
+assign _writeEnable_OUT = write_enable;
+
+assign if_immed_OUT = immed;
+assign if_jumpReg_OUT	= JumpRegister;
+assign if_jumpID_OUT	= Jump;
+assign if_branchID_OUT		= Branch;
+/************************************************/
 
 endmodule

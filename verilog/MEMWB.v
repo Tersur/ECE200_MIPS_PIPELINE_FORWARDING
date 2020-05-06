@@ -37,6 +37,10 @@ assign WriteRegister_OUT 	= WriteRegister;
 assign WriteEnable_OUT 		= WriteEnable;
 
 //WHEN CLOCK RISES OR RESET FALLS
+// always @(negedge CLOCK)begin
+// 	WriteData <= 0;
+// end
+
 always @(posedge CLOCK or negedge RESET) begin
 
 	$display("");
