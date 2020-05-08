@@ -7,6 +7,9 @@ module Hazard(
 		input 	RESET,
 	//	input	_jump_IDEXE,
 		input	Syscall_IN,
+		
+		//FORWARD --> HAZARD
+		input	STALL_IN,
 
 	//MODULE OUTPUTS
 
@@ -27,6 +30,8 @@ module Hazard(
 
 reg [4:0] MultiCycleRing;
 reg [3:0] MultiCycleRing2;
+reg [1:0] MultiCycleRing3;
+
 reg		  STALL;
 reg		  FLUSHIDEXE;
 reg		  FLUSHEXEMEM;
@@ -48,7 +53,24 @@ assign FLUSH_IFID = FLUSHIFID;
 assign STALL_IFID = STALL;
 
 assign Syscall_OUT = syscall;
-	
+
+
+always @(negedge CLOCK)begin
+	if(STALL_IN)begin
+		MultiCycleRing3 = 2'b01;
+		FLUSHIDEXE <= 1'b1;
+		STALL	<= 1'b1;
+	end
+	if(MultiCycleRing3[1]) begin
+		MultiCycleRing3 = 2'b0;
+		FLUSHIDEXE <= 1'b0;
+		STALL	<= 1'b0;
+	end
+end
+
+always @(posedge CLOCK) begin
+	MultiCycleRing3 = {{MultiCycleRing3[0], MultiCycleRing3[1]}};
+end
 /*******************************/
 always @(negedge CLOCK) begin
 	if(Syscall_IN)begin
@@ -73,13 +95,6 @@ always @(posedge CLOCK)begin
 	if(MultiCycleRing2[3])begin
 		syscall <= 1;
 	end
-
-	// if(MultiCycleRing2[1])begin
-	// 	FLUSHIDEXE <= 1'b1;
-	// end
-	// else begin
-	// 	FLUSHIDEXE <= 1'b0;
-	// end
 
 	if(MultiCycleRing2[1])begin
 		FLUSHEXEMEM <= 1'b1;

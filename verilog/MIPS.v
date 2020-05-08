@@ -271,7 +271,7 @@ IF IF(
 		.AltPC_IN(AltPC_IDtoIF),
 		.AltPCEnable_IN(AltPCEnable_IDtoIF),
 		//FORWARD --> ID		
-		._FRegval(b_jump_Register),
+		.jump_RegisterFOR_IN(b_jump_Register),
 		._Forward(b_forwardIF),
 	//MODULE OUTPUTS
 	
@@ -552,8 +552,11 @@ Hazard Hazard(
 		//CONTROL SIGNALS
 		.CLOCK(CLOCK),
 		.RESET(RESET),
-		//._jump_IDEXE(b_jump_IDEXEtoFOR),
+		//ID -->HAZARD
 		.Syscall_IN(b_SYS),
+
+		//FORWARD --> HAZARD
+		.STALL_IN(b_STALL),
 		
 	//MODULE OUTPUTS
 
@@ -582,10 +585,10 @@ Forward Forward(
 	.CLOCK(CLOCK),
 	.RESET(RESET),
 
-	//ID --> FORWARD
-	._jump_IN(b_jump_IDtoFOR),
-	.jump_RegisterID(b_RegisterRS_IDtoIDEXE),
-	.if_branchID(b_branchID),
+	//ID --> FORWARDjump_RegisterID_IN
+	.if_jump_RegisterID_IN(b_jump_IDtoFOR),
+	.jump_RegisterID_IN(b_RegisterRS_IDtoIDEXE),
+	.if_branchID_IN(b_branchID),
     .RegisterRSID_IN(b_RegisterRS_IDtoIDEXE),
     .RegisterRTID_IN(b_RegisterRT_IDtoIDEXE),
 	.branch_operandA_IN(OperandA_IDtoIDEXE),
@@ -597,31 +600,36 @@ Forward Forward(
 	
 	._RegisterRS_IN(b_RegisterRS_IDEXEtoFORWARD),
 	._RegisterRT_IN(b_RegisterRT_IDEXEtoFORWARD),
-	.Fimmed(b_immed_IDEXEtoFOR),
-	.jumpIDEXEtoFOR(b_jump_IDEXEtoFOR),
-	.jumpFOR(b_jump_FOR),
 	.writeRegister_IN(WriteRegister_IDEXEtoEXEMEM),
-	.mem_write_IN(MemWrite_IDEXEtoEXEMEM),
-	.mem_read_data(MemWriteData_IDEXEtoEXEMEM),
+
+	.if_immediateIDEXE_IN(b_immed_IDEXEtoFOR),
+	.if_JumpRegisterIDEXE_IN(b_jump_IDEXEtoFOR),
+	.if_JumpIDEXE_IN(b_jump_FOR),
+	.if_memWriteIDEXE_IN(MemWrite_IDEXEtoEXEMEM),
+	.if_memReadIDEXE_IN(MemRead_IDEXEtoEXEMEM),
+
+	.memWriteDataIDEXE_IN(MemWriteData_IDEXEtoEXEMEM),
 	.WritEnableIDEXE_IN(WriteEnable_IDEXEtoEXEMEM),
 	
 	//EXE --> FORWARD
-	.aluResult_IN(ALUResult_EXEtoEXEMEM),
+	.AluResultEXE_IN(ALUResult_EXEtoEXEMEM),
 	//EXE/MEM --> FORWARD
 	.RegvalueEXEMEM_IN(ALUResult_EXEMEMtoMEM),
 	.RegisterEXEMEM_IN(WriteRegister_EXEMEMtoMEMWB),
-	.mem_read_IN(MemRead_EXEMEMtoMEM), //relates to .MEMREAD_IN(WriteData_MEMtoMEMWB),
-	.MemWrite_IN(MemWrite_EXEMEMtoDM),
-	.MemWriteData_IN(MemWriteData_EXEMEMtoMEM),
+
+	.if_memReadEXEMEM_IN(MemRead_EXEMEMtoMEM), //relates to .MEMREAD_IN(WriteData_MEMtoMEMWB),
+	.if_memWriteEXEMEM_IN(MemWrite_EXEMEMtoDM),
+	.memWriteDataEXEMEM_IN(MemWriteData_EXEMEMtoMEM),
 	.WriteEnableEXEMEM_IN(WriteEnable_EXEMEMtoMEMWB),
 	
 	//MEM/WB --> FORWARD
 	.RegvalueMEMWB_IN(WriteData_MEMWBtoID),
 	.RegisterMEMWB_IN(WriteRegister_MEMWBtoID),
+
 	.WriteEnableMEMWB_IN(WriteEnable_MEMWBtoID),
 
 	//MEM --> FORWARD
-	.MEMREAD_IN(WriteData_MEMtoMEMWB),
+	.MEMREADDATA_IN(WriteData_MEMtoMEMWB),
 
 	//RegFile/WB (ID) --> FORWARD
 	._RegisterValue_IN(b_regvalueRegfile_IDtoFOR),		
@@ -629,17 +637,6 @@ Forward Forward(
 	.write_IN(b_writeEnable_IDtoFOR),
 
 	//MODULE OUTPUTS
-	
-	//FORWARD --> EXE
-	._operandA_OUT(b_operandA_OUT),
-	._operandB_OUT(b_operandB_OUT),
-	._forward(b_forward),
-	.S_operandA_OUT(sb_operandA_OUT),
-	.S_operandB_OUT(sb_operandB_OUT),
-
-	//
-	.mem_forward(b_mem_forward),
-	.mem_write_data(b_mem_write_data),
 	//FORWARD --> IF
 	.jump_Register(b_jump_Register),
 	._forwardIF(b_forwardIF),
@@ -647,7 +644,22 @@ Forward Forward(
 	//FORWARD --> ID
 	.branch_operandA_OUT(b_branch_operandA),
     .branch_operandB_OUT(b_branch_operandB),
-    .branch_Forward(b_branch)
+    .branch_Forward(b_branch),
+
+	//FORWARD --> EXE
+	._operandA_OUT(b_operandA_OUT),
+	._operandB_OUT(b_operandB_OUT),
+	._forward(b_forward),
+	.S_operandA_OUT(sb_operandA_OUT),
+	.S_operandB_OUT(sb_operandB_OUT),
+
+	//FORWARD --> MEM
+	.mem_forward(b_mem_forward),
+	.memWriteData_OUT(b_mem_write_data),
+
+	//FORWARD --> HAZARD
+	.STALL_OUT(b_STALL)
+	
 
 );
 

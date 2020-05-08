@@ -10,8 +10,8 @@ module IF(
                 //ID --> IF
                 input [31:0]    AltPC_IN,
                 input           AltPCEnable_IN,
-                inout [31:0]		_FRegval,
-		inout		_Forward,
+                input [31:0]		jump_RegisterFOR_IN,
+		input		_Forward,
 
         //MODULE OUTPUTS
 
@@ -69,7 +69,7 @@ end
 
 always begin
         if(_Forward)begin
-                BranchTarget = _FRegval;
+                BranchTarget = jump_RegisterFOR_IN;
                 BranchEnable = 1'b1;
         end
 end
