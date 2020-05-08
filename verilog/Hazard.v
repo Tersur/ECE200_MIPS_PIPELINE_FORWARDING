@@ -55,6 +55,7 @@ assign STALL_IFID = STALL;
 assign Syscall_OUT = syscall;
 
 
+/***************for jump register and branch****************/
 always @(negedge CLOCK)begin
 	if(STALL_IN)begin
 		MultiCycleRing3 = 2'b01;
@@ -68,10 +69,12 @@ always @(negedge CLOCK)begin
 	end
 end
 
+/***************for jump register and branch****************/
 always @(posedge CLOCK) begin
 	MultiCycleRing3 = {{MultiCycleRing3[0], MultiCycleRing3[1]}};
 end
-/*******************************/
+
+/***************for Syscalls****************/
 always @(negedge CLOCK) begin
 	if(Syscall_IN)begin
 		MultiCycleRing2 = 4'b0001;
@@ -89,6 +92,7 @@ always @(negedge CLOCK) begin
 
 end
 
+/***************for Syscalls****************/
 always @(posedge CLOCK)begin
 	MultiCycleRing2 = {{MultiCycleRing2[2:0], MultiCycleRing2[3]}};
 

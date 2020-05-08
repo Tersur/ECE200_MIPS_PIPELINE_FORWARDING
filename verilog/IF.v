@@ -49,7 +49,7 @@ always @(posedge CLOCK or negedge RESET) begin
                 $display("ProgramCounter:\t\t%x", ProgramCounter);
                 if(!STALL)begin
                 BranchTarget    = BranchEnable ? BranchTarget : AltPC_IN;
-                BranchEnable    = !STALL ? (BranchEnable ? 1 : AltPCEnable_IN) : 0;
+                BranchEnable    = BranchEnable ? 1 : AltPCEnable_IN;
                 end
                 $display("BranchEnable:\t\t%d", BranchEnable);
                 $display("BranchTarget:\t\t%x", BranchTarget);

@@ -48,7 +48,7 @@ always @(posedge CLOCK or negedge RESET) begin
 		$display("");
 		$display("----- IF/ID -----");
 		$display("Instruction:\t\t\t%x", Instruction);
-		$display("Instruction Address + 4:\t%x", InstructionAddressPlus4);
+		$display("Instruction Address + 4:\t%x", InstructionAddressPlus4 + 3'd4);
 
 		//IF MODULE IS NOT BEING STALLED AND IS NOT BEING FLUSHED 
 		if(!STALL) begin
