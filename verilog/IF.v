@@ -11,7 +11,7 @@ module IF(
                 input [31:0]    AltPC_IN,
                 input           AltPCEnable_IN,
                 input [31:0]		jump_RegisterFOR_IN,
-		input		_Forward,
+		input		jump_Forward,
 
         //MODULE OUTPUTS
 
@@ -68,7 +68,7 @@ always @(posedge CLOCK or negedge RESET) begin
 end
 
 always begin
-        if(_Forward)begin
+        if(jump_Forward)begin
                 BranchTarget = jump_RegisterFOR_IN;
                 BranchEnable = 1'b1;
         end

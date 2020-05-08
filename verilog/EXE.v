@@ -18,8 +18,8 @@ module EXE(
 		input  [31:0] S_operandA_IN,
         input  [31:0] S_operandB_IN,
 
-		input 		forward,
-		input		Fmem_forwardIN,
+		input 		Alu_forward,
+		input		mem_forwardIN,
 		//input		forwardMEM,
 		/************************/
 	//MODULE OUTPUT
@@ -40,11 +40,11 @@ wire [31:0] newLO;
 wire [31:0] OperandA;
 wire [31:0] OperandB;
 
-// assign _forwardexe = forward;
+// assign _forwardexe = Alu_forward;
 always begin
-	case (forward)
+	case (Alu_forward)
 		1'b0:begin
-			case(Fmem_forwardIN)
+			case(mem_forwardIN)
 				1'b1:begin
 				OperandA = S_operandA_IN;
 				OperandB = S_operandB_IN;

@@ -233,13 +233,13 @@ assign Syscall_OUT 		= Syscall;
 
 /*************************************************/
 assign _RegisterValue_OUT = regvalue_from_Regfile;		
-assign _Register_OUT = reg_from_Regfile;
+assign _Register_OUT 	= reg_from_Regfile;
 assign _writeEnable_OUT = write_enable;
 
-assign if_immed_OUT = immed;
+assign if_immed_OUT 	= immed;
 assign if_jumpReg_OUT	= JumpRegister;
 assign if_jumpID_OUT	= Jump;
-assign if_branchID_OUT		= Branch;
+assign if_branchID_OUT	= Branch;
 /************************************************/
 
 endmodule

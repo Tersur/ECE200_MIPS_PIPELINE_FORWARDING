@@ -22,8 +22,8 @@ module EXEMEM(
 		input 		WriteEnable_IN,
 
 		//FORWARD --> EXE/MEM
-		input [31:0] Fmem_data,
-		input Fmem_forwardIN,
+		input [31:0] memWriteData_IN,
+		input mem_forwardIN,
 		
 
 	// MODULE OUTPUTS
@@ -99,8 +99,8 @@ always @(posedge CLOCK or negedge RESET) begin
 		if(!STALL && !FLUSH) begin
 
 			//SET PIPELINE REGISTERS TO INPUTS
-			if(Fmem_forwardIN)
-				MemWriteData <= Fmem_data;
+			if(mem_forwardIN)
+				MemWriteData <= memWriteData_IN;
 			else
 				MemWriteData 	<= MemWriteData_IN;	
 			MemControl 	<= MemControl_IN;

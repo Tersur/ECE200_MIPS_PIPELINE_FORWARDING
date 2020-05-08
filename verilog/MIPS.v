@@ -272,7 +272,7 @@ IF IF(
 		.AltPCEnable_IN(AltPCEnable_IDtoIF),
 		//FORWARD --> ID		
 		.jump_RegisterFOR_IN(b_jump_Register),
-		._Forward(b_forwardIF),
+		.jump_Forward(b_forwardIF),
 	//MODULE OUTPUTS
 	
 		//IF --> IF/ID
@@ -362,7 +362,9 @@ ID ID(
 		._RegisterValue_OUT(b_regvalueRegfile_IDtoFOR),		
 		._Register_OUT(b_regRegfile_IDtoFOR),
 		._writeEnable_OUT(b_writeEnable_IDtoFOR),
+
 		.if_immed_OUT(b_immed_IDtoIDEXE),
+
 		.if_jumpReg_OUT(b_jump_IDtoFOR),
 		.if_branchID_OUT(b_branchID)
 		/******************************/
@@ -397,8 +399,8 @@ IDEXE IDEXE(
 		/****************/
 		.RegisterRS_IN(b_RegisterRS_IDtoIDEXE),
 		.RegisterRT_IN(b_RegisterRT_IDtoIDEXE),
-		.immed_IN(b_immed_IDtoIDEXE),
-		.jumpReg_IN(b_jump_IDtoFOR),
+		.if_immed_IN(b_immed_IDtoIDEXE),
+		.if_jumpReg_IN(b_jump_IDtoFOR),
 		.if_jumpIDEXE_IN(b_jumpIDEXE),
 		/****************/
 
@@ -422,8 +424,8 @@ IDEXE IDEXE(
 		/****************/
 		._RegisterRS_OUT(b_RegisterRS_IDEXEtoFORWARD),
 		._RegisterRT_OUT(b_RegisterRT_IDEXEtoFORWARD),
-		._immed_OUT(b_immed_IDEXEtoFOR),
-		._jumpReg_OUT(b_jump_IDEXEtoFOR),
+		.if_immed_OUT(b_immed_IDEXEtoFOR),
+		.if_jumpReg_OUT(b_jump_IDEXEtoFOR),
 		.if_jumpIDEXE_OUT(b_jump_FOR)
 		/****************/
 
@@ -450,8 +452,8 @@ EXE EXE(
 		.FOperandB_IN(b_operandB_OUT),
 		.S_operandA_IN(sb_operandA_OUT),
 		.S_operandB_IN(sb_operandB_OUT),
-		.forward(b_forward),
-		.Fmem_forwardIN(b_mem_forward),
+		.Alu_forward(b_forward),
+		.mem_forwardIN(b_mem_forward),
 		//.forwardMEM(b_forwardMEM),
 		/***********************************/
 	//MODULE OUTPUTS
@@ -481,8 +483,8 @@ EXEMEM EXEMEM(
 		.ALUResult_IN(ALUResult_EXEtoEXEMEM),
 		.WriteRegister_IN(WriteRegister_IDEXEtoEXEMEM),
 		.WriteEnable_IN(WriteEnable_IDEXEtoEXEMEM),
-		.Fmem_data(b_mem_write_data),
-		.Fmem_forwardIN(b_mem_forward),
+		.memWriteData_IN(b_mem_write_data),
+		.mem_forwardIN(b_mem_forward),
 
 	//MODULE OUTPUTS
 
@@ -639,7 +641,7 @@ Forward Forward(
 	//MODULE OUTPUTS
 	//FORWARD --> IF
 	.jump_Register(b_jump_Register),
-	._forwardIF(b_forwardIF),
+	.JumpReg_forward(b_forwardIF),
 
 	//FORWARD --> ID
 	.branch_operandA_OUT(b_branch_operandA),
@@ -649,12 +651,13 @@ Forward Forward(
 	//FORWARD --> EXE
 	._operandA_OUT(b_operandA_OUT),
 	._operandB_OUT(b_operandB_OUT),
-	._forward(b_forward),
+	.Alu_forward(b_forward),
+
 	.S_operandA_OUT(sb_operandA_OUT),
 	.S_operandB_OUT(sb_operandB_OUT),
 
 	//FORWARD --> MEM
-	.mem_forward(b_mem_forward),
+	.Mem_forward(b_mem_forward),
 	.memWriteData_OUT(b_mem_write_data),
 
 	//FORWARD --> HAZARD

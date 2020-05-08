@@ -7,9 +7,12 @@ module Forward(
         //ID --> FORWARD
         input       if_jump_RegisterID_IN,
         input [4:0] jump_RegisterID_IN,
+
         input       if_branchID_IN,
+
         input  [4:0] RegisterRSID_IN,
         input  [4:0] RegisterRTID_IN,
+
         input   [31:0] branch_operandA_IN,
         input   [31:0] branch_operandB_IN,
         
@@ -39,9 +42,11 @@ module Forward(
         //EXE/MEM --> FORWARD
         input   [31:0] RegvalueEXEMEM_IN,
         input   [4:0] RegisterEXEMEM_IN,
+
         input       if_memReadEXEMEM_IN,
+
         input       if_memWriteEXEMEM_IN,
-	    input [31:0] memWriteDataEXEMEM_IN,
+	    input   [31:0] memWriteDataEXEMEM_IN,
         input       WriteEnableEXEMEM_IN,
 
         //MEM --> FORWARD
@@ -58,25 +63,25 @@ module Forward(
         input       write_IN,
 		/******************************/
         //MODULE OUTPUTS
-        //FORWARD --> EXE
-        output  [31:0] _operandA_OUT,
-        output  [31:0] _operandB_OUT,
-        output _forward,
-        output  [31:0] S_operandA_OUT,
-        output  [31:0] S_operandB_OUT,
-
         //FORWARD --> IF
         output [31:0]  jump_Register,
-        output  _forwardIF,
+        output  JumpReg_forward,
 
         //FORWARD --> ID
         output [31:0] branch_operandA_OUT,
         output [31:0] branch_operandB_OUT,
         output  branch_Forward,
 
+        //FORWARD --> EXE
+        output  [31:0] _operandA_OUT,
+        output  [31:0] _operandB_OUT,
+        output Alu_forward,
+
+        output  [31:0] S_operandA_OUT,
+        output  [31:0] S_operandB_OUT,
+        
         //FORWARD --> MEM
-        //connect to exemem and exe
-        output mem_forward,
+        output Mem_forward, //also to EXE
         output [31:0] memWriteData_OUT,
 
         //FORWARD --> HAZARD
@@ -92,23 +97,27 @@ wire [4:0] RegS;
 wire [4:0] RegT;
 wire [4:0]	RegWB;
 
+/************************/
 
 reg     [31:0] _operandA;
 reg     [31:0] _operandB;
-reg             _forward_;
-reg             _forward2;
+reg             _forwardALU;
+
 reg     [31:0] _jump_Register;
-/************************/
+reg             _forwardJUMPReg;
+
 reg [31:0] branch_operandA;
 reg [31:0] branch_operandB;
-reg _forward3;
-/***********************/
+reg        _forwardBRANCH;
 
 reg [31:0]  S_operandA;
 reg [31:0]  S_operandB;
 reg [31:0] memdata;
-reg _forward4;
+reg        _forwardLOAD_STORE;
+
 reg Stall;
+
+/***********************/
 
 assign RegS = _RegisterRS_IN;
 assign RegT = _RegisterRT_IN;
@@ -119,19 +128,20 @@ assign RegWB  = _Register_IN;
 
 assign _operandA_OUT = _operandA;
 assign _operandB_OUT = _operandB;
+assign Alu_forward = _forwardALU;
+
+assign JumpReg_forward = _forwardJUMPReg;
 assign jump_Register = _jump_Register;
 
 assign branch_operandA_OUT = branch_operandA;
 assign branch_operandB_OUT = branch_operandB;
-assign branch_Forward = _forward3;
+assign branch_Forward = _forwardBRANCH;
 
 assign S_operandA_OUT   = S_operandA;
 assign S_operandB_OUT   = S_operandB;
-assign mem_forward = _forward4;
-assign memWriteData_OUT = memdata;
+assign Mem_forward = _forwardLOAD_STORE;
 
-assign _forward = _forward_;
-assign _forwardIF = _forward2;
+assign memWriteData_OUT = memdata;
 
 assign STALL_OUT = Stall;
 
@@ -147,7 +157,7 @@ always @(negedge CLOCK or negedge RESET) begin
     if(!RESET)begin
         _operandA <= 0;
         _operandB <= 0;
-        _forward_ <= 1'b0;
+        _forwardALU <= 1'b0;
        
     end
     
@@ -160,98 +170,98 @@ always @(negedge CLOCK or negedge RESET) begin
                 _operandA <= RegvalueEXEMEM_IN;
                 
                 //RT
-                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN/*&& !if_immediateIDEXE_IN*/)begin //if RT == dest reg at EXEMEM and dest reg is written to
+                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN)begin //if RT == dest reg at EXEMEM and dest reg is written to
                     if(!if_immediateIDEXE_IN)begin                                          //forward if not immediate
                         _operandB <= RegvalueEXEMEM_IN;
                     end
                     else begin                                                              //do not forward if immediate
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN/*&& !if_immediateIDEXE_IN*/)begin  //if RT == dest reg at MEMWB and dest reg is written to
+                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN)begin  //if RT == dest reg at MEMWB and dest reg is written to
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueMEMWB_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegWB)&&write_IN /*&& !if_immediateIDEXE_IN*/)begin    //if RT == dest reg at RegFile and dest reg is written to
+                else if((RegT == RegWB)&&write_IN )begin    //if RT == dest reg at RegFile and dest reg is written to
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= _RegisterValue_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
                 else begin      //else do not forward for second operand
                     _operandB <= _operandB_IN;
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                     
                 end
             end
 
             /******************************************************/
             //RS
-            else if ((RegS ==RegDMEM) && WriteEnableMEMWB_IN && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN/*(RegT || RegS)*/)begin    //if RS at IDEXE == dest reg at MEMWB and dest reg is written to and instr is not a jump
+            else if ((RegS ==RegDMEM) && WriteEnableMEMWB_IN && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin    //if RS at IDEXE == dest reg at MEMWB and dest reg is written to and instr is not a jump
                 _operandA <= RegvalueMEMWB_IN;
                 //RT
-                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN/*&& !if_immediateIDEXE_IN*/)begin
+                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueEXEMEM_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN/*&& !if_immediateIDEXE_IN*/)begin
+                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueMEMWB_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegWB)&&write_IN /*&& !if_immediateIDEXE_IN*/)begin
+                else if((RegT == RegWB)&&write_IN )begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= _RegisterValue_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
                 else begin
                    
                     _operandB <= _operandB_IN;
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
             end
             
             /******************************************************/
             //RS
-            else if((RegS == RegWB)&& write_IN && /*(RegT || RegS)*/!if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin  //if RS at IDEXE == dest reg at Regfile and dest reg is written to and instr is not a jump
+            else if((RegS == RegWB)&& write_IN && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin  //if RS at IDEXE == dest reg at Regfile and dest reg is written to and instr is not a jump
                 _operandA <= _RegisterValue_IN;
 
                 //RT
-                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN/*&& !if_immediateIDEXE_IN*/)begin
+                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN)begin
                    _operandA <= _RegisterValue_IN;
                     if(!if_immediateIDEXE_IN) begin
                         _operandB <= RegvalueEXEMEM_IN;
@@ -259,35 +269,35 @@ always @(negedge CLOCK or negedge RESET) begin
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN/*&& !if_immediateIDEXE_IN*/)begin
+                else if((RegT == RegDMEM) && WriteEnableMEMWB_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueMEMWB_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
-                else if((RegT == RegWB)&& write_IN/*&& !if_immediateIDEXE_IN*/)begin
+                else if((RegT == RegWB)&& write_IN)begin
                     if(!if_immediateIDEXE_IN) begin
                         _operandB <= _RegisterValue_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
 
                 //RT
                 else begin
                     _operandB <= _operandB_IN;
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
             end
 
@@ -297,38 +307,38 @@ always @(negedge CLOCK or negedge RESET) begin
                 _operandA <= _operandA_IN;
 
                 //RT
-                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN/*&& !if_immediateIDEXE_IN&& (RegT || RegS)*/ && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin
+                if((RegT == RegDEXE) && WriteEnableEXEMEM_IN && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueEXEMEM_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
                 //RT
-                else if((RegT == RegDMEM)/*&& !if_immediateIDEXE_IN && (RegT || RegS)*/ && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN && WriteEnableMEMWB_IN)begin
+                else if((RegT == RegDMEM) && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN && WriteEnableMEMWB_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= RegvalueMEMWB_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
                 //RT
-                else if((RegT == RegWB)&& write_IN /*&& !if_immediateIDEXE_IN && (RegT || RegS)*/ && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin
+                else if((RegT == RegWB)&& write_IN  && !if_JumpRegisterIDEXE_IN && !if_JumpIDEXE_IN)begin
                     if(!if_immediateIDEXE_IN)begin
                         _operandB <= _RegisterValue_IN;
                     end
                     else begin
                         _operandB <= _operandB_IN;
                     end
-                    _forward_ <= 1'b1;
+                    _forwardALU <= 1'b1;
                 end
                 //do not forward
                 else begin
-                    _forward_ <= 1'b0;
+                    _forwardALU <= 1'b0;
                 end
             end  
         
@@ -359,23 +369,23 @@ always begin
                 _jump_Register = MEMREADDATA_IN;
             end
 
-            _forward2 = 1'b1;
+            _forwardJUMPReg = 1'b1;
         end
 
         else if((jump_RegisterID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
 
             _jump_Register = RegvalueMEMWB_IN;
-            _forward2 = 1'b1;
+            _forwardJUMPReg = 1'b1;
 
         end
 
         else if((jump_RegisterID_IN==RegWB) && write_IN) begin
             _jump_Register = _RegisterValue_IN;
-            _forward2 = 1'b1;
+            _forwardJUMPReg = 1'b1;
         end
 
         else begin
-            _forward2 = 1'b0;
+            _forwardJUMPReg = 1'b0;
         end
     end
 
@@ -406,22 +416,22 @@ always begin
                 else if(if_memReadEXEMEM_IN)begin
                     branch_operandB = MEMREADDATA_IN;
                 end
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegWB) && write_IN)begin
                     branch_operandB = _RegisterValue_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else begin
                 branch_operandB = branch_operandB_IN;
-                _forward3 = 1'b1; 
+                _forwardBRANCH = 1'b1; 
             end
     
         end
@@ -449,22 +459,22 @@ always begin
                     branch_operandB = MEMREADDATA_IN;
                 end
 
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegWB) && write_IN)begin
                     branch_operandB = _RegisterValue_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else begin
                 branch_operandB = branch_operandB_IN;
-                _forward3 = 1'b1; 
+                _forwardBRANCH = 1'b1; 
             end
         end
 
@@ -488,22 +498,22 @@ always begin
                     branch_operandB = MEMREADDATA_IN;
                 end
 
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegWB) && write_IN)begin
                     branch_operandB = _RegisterValue_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else begin
                 branch_operandB = branch_operandB_IN;
-                _forward3 = 1'b1; 
+                _forwardBRANCH = 1'b1; 
             end
         end
 
@@ -525,22 +535,22 @@ always begin
                 else if(if_memReadEXEMEM_IN)begin
                     branch_operandB = MEMREADDATA_IN;
                 end
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegWB) && write_IN)begin
                     branch_operandB = _RegisterValue_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else begin
                 branch_operandB = branch_operandB_IN;
-                _forward3 = 1'b1; 
+                _forwardBRANCH = 1'b1; 
             end
         end
 
@@ -561,22 +571,22 @@ always begin
                     branch_operandB = MEMREADDATA_IN;
                 end
 
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                     branch_operandB = RegvalueMEMWB_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else if((RegisterRTID_IN == RegWB) && write_IN)begin
                     branch_operandB = _RegisterValue_IN;
-                _forward3 = 1'b1;
+                _forwardBRANCH = 1'b1;
             end
             //RT
             else begin
                 branch_operandB = branch_operandB_IN;
-                _forward3 = 1'b0; 
+                _forwardBRANCH = 1'b0; 
             end
         end
     end
@@ -621,7 +631,7 @@ always @(negedge CLOCK) begin
             else begin
                 memdata <= memWriteDataIDEXE_IN;
             end
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
 
         //RS
@@ -649,7 +659,7 @@ always @(negedge CLOCK) begin
             else begin
                 memdata <= memWriteDataIDEXE_IN;
             end
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
         //RS
         else if((_RegisterRS_IN == RegWB) && write_IN)begin
@@ -676,7 +686,7 @@ always @(negedge CLOCK) begin
             else begin
                 memdata <= memWriteDataIDEXE_IN;
             end
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
 
         else begin  //RS
@@ -689,22 +699,22 @@ always @(negedge CLOCK) begin
                 else if(!if_memReadEXEMEM_IN && !if_memWriteEXEMEM_IN)begin
                     memdata <= RegvalueEXEMEM_IN;
                 end
-                _forward4 <= 1'b1;
+                _forwardLOAD_STORE <= 1'b1;
             end
             //RT
             else if((_RegisterRT_IN == RegDMEM) && WriteEnableMEMWB_IN)begin
                 memdata <= RegvalueMEMWB_IN;
-                _forward4 <= 1'b1;
+                _forwardLOAD_STORE <= 1'b1;
             end
             //RT
             else if((_RegisterRT_IN == RegWB) && write_IN)begin
                 memdata <= _RegisterValue_IN;
-                _forward4 <= 1'b1;
+                _forwardLOAD_STORE <= 1'b1;
             end
             //RT
             else begin
                 memdata <= memWriteDataIDEXE_IN;
-                _forward4 <= 1'b0;
+                _forwardLOAD_STORE <= 1'b0;
             end
         end
 
@@ -728,23 +738,23 @@ always @(negedge CLOCK)begin
             else if (!if_memReadEXEMEM_IN && !if_memWriteEXEMEM_IN)begin
                 S_operandA <= RegvalueEXEMEM_IN; // reg value from EXEMEM
             end
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
         // _RegisterRT_IN will be replaced with data, so no need to forward to it
         
         else if((_RegisterRS_IN == RegDMEM) && WriteEnableMEMWB_IN)begin // if regs in ID/EXE == MEM/WB
             S_operandA <= RegvalueMEMWB_IN;
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
 
         else if((_RegisterRS_IN == RegWB) && write_IN)begin
             S_operandA <= _RegisterValue_IN;
-            _forward4 <= 1'b1;
+            _forwardLOAD_STORE <= 1'b1;
         end
 
         else begin
             S_operandA <= _operandA_IN;
-            _forward4 <= 1'b0;
+            _forwardLOAD_STORE <= 1'b0;
         end
     end
 end //5th always ends
@@ -755,10 +765,10 @@ end //5th always ends
 /*this sets the forwarding bit for jump register and branch to zero after it has been forwarded
 */
 always @(posedge CLOCK)begin
-    _forward_ <= 1'b0;
-    _forward4 <= 1'b0;
-    _forward2 = 1'b0;
-    _forward3 = 1'b0;
+    _forwardALU <= 1'b0;
+    _forwardLOAD_STORE <= 1'b0;
+    _forwardJUMPReg = 1'b0;
+    _forwardBRANCH = 1'b0;
     Stall = 1'b0;
 end //6th always ends
 

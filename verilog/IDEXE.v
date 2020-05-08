@@ -28,8 +28,8 @@ module IDEXE(
 		/**************************************/
 		input [4:0] RegisterRS_IN,
 		input [4:0] RegisterRT_IN,
-		input		immed_IN,
-		input		jumpReg_IN,
+		input		if_immed_IN,
+		input		if_jumpReg_IN,
 		input		if_jumpIDEXE_IN,
 		/**************************************/
 
@@ -45,8 +45,8 @@ module IDEXE(
 		//ID/EXE --> FORWARD
 		output [4:0] _RegisterRS_OUT,		
 		output [4:0] _RegisterRT_OUT,
-		output		_immed_OUT,
-		output		_jumpReg_OUT,
+		output		if_immed_OUT,
+		output		if_jumpReg_OUT,
 		output		if_jumpIDEXE_OUT,
 		/************************************/
 	
@@ -98,8 +98,8 @@ assign WriteEnable_OUT		= WriteEnable;
 /********************************************/
 assign _RegisterRS_OUT		= RegisterS;
 assign _RegisterRT_OUT		= RegisterT;
-assign _immed_OUT			= immed;
-assign _jumpReg_OUT 		= jumpreg;
+assign if_immed_OUT			= immed;
+assign if_jumpReg_OUT 		= jumpreg;
 assign if_jumpIDEXE_OUT			= jump;
 /********************************************/
 
@@ -166,8 +166,8 @@ always @(posedge CLOCK or negedge RESET) begin
 			/************************************/
 			RegisterS <= RegisterRS_IN;
 			RegisterT <= RegisterRT_IN;
-			immed <= immed_IN;
-			jumpreg <= jumpReg_IN;
+			immed <= if_immed_IN;
+			jumpreg <= if_jumpReg_IN;
 			jump	<= if_jumpIDEXE_IN;
 			/***********************************/
 	
